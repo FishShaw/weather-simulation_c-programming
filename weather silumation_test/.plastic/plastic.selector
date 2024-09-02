@@ -1,0 +1,4 @@
+repository "weather silumation_test@ShawRX@cloud"
+  path "/"
+    br "/main"
+    co "/main"
