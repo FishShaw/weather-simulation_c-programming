@@ -18,6 +18,7 @@ public class Wind_windconclu_gz : MonoBehaviour
 
     IEnumerator FetchWindData()
     {
+        //debug information
         Debug.Log($"Attempting to download file: {targetFileName}");
         yield return StartCoroutine(GetFileUrl(targetFileName));
     }
