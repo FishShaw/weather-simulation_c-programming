@@ -24,3 +24,7 @@
 *.pdb
 *.opendb
 *.VC.db
+
+weather silumation_test/Assets/AllSkyFree/Cold Sunset/Cold Sunset Equirect.png
+datasets/Precipitation_1hour_accu_1km_HDF5/RADNL_CLIM____MFBSNL25_01H_20230101T000000_20240101T000000_0002.zip
+datasets/Precipitation_24hour_accu_1km_HDF5/RADNL_CLIM____MFBSNL25_24H_20221231T010000_20240101T000000_0002.zip
