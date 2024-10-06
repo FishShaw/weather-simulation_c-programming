@@ -3,7 +3,7 @@
 1. Clone this repo 
 2. Open the cloned repo andd navigate to Assets/libs and double click on get_libs.bat
 3. Read the included 'Manual.pdf'
-4. Watch the included 'Setup_Demo_Scene.mkv' video on how to set up a new area anywhere in the Netherlands in minutes.
+4. Watch the included 'Setup_Demo_Scene.mkv' video on how to set up a new area anywhere in the Netherlands.
 
 ### Troubleshooting
 If an access related error occurs in step 2, ensure your supervisor has given you at least read access to the repositories. 
