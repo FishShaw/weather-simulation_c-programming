@@ -1,0 +1,13 @@
+{
+    "original_min": -18.732681274414062,
+    "original_max": 21.458724975585938,
+    "parameter": "UGRD",
+    "units": "m/s",
+    "coordinates": {
+        "lat_min": 49.0,
+        "lat_max": 56.002,
+        "lon_min": 0.0,
+        "lon_max": 11.281
+    },
+    "data_type": "wind_u"
+}

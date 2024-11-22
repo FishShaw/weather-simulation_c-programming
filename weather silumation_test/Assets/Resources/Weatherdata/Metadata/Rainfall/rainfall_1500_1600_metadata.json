@@ -1,0 +1,13 @@
+{
+    "original_min": -0.001220703125,
+    "original_max": 13.902099609375,
+    "parameter": "LPSX",
+    "units": "mm",
+    "coordinates": {
+        "lat_min": 49.0,
+        "lat_max": 56.002,
+        "lon_min": 0.0,
+        "lon_max": 11.281
+    },
+    "data_type": "rainfall"
+}

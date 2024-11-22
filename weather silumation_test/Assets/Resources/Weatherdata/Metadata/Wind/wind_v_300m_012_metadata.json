@@ -1,0 +1,13 @@
+{
+    "original_min": -7.368324279785156,
+    "original_max": 24.042808532714844,
+    "parameter": "VGRD",
+    "units": "m/s",
+    "coordinates": {
+        "lat_min": 49.0,
+        "lat_max": 56.002,
+        "lon_min": 0.0,
+        "lon_max": 11.281
+    },
+    "data_type": "wind_v"
+}
