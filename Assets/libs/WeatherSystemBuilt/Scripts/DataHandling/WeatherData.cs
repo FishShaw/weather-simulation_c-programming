@@ -4,7 +4,7 @@ using System;
 namespace WeatherSystem.DataHandling
 {
     [Serializable]
-    public class WeatherData : MonoBehaviour
+    public class WeatherData
     {
         public Texture2D rainfallTexture;
         public Texture2D windUTexture;

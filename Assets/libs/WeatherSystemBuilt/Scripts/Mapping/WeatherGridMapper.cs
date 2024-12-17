@@ -14,6 +14,12 @@ namespace WeatherSystem.Mapping
 
         public void Initialize()
         {
+            if (settings == null)
+            {
+                Debug.LogError("Weather Settings not assigned!");
+                return;
+            }
+
             if (terrainBuilder == null)
             {
                 terrainBuilder = FindObjectOfType<TerrainBuilder>();
@@ -24,10 +30,7 @@ namespace WeatherSystem.Mapping
                 }
             }
 
-            // using the terrain builder's zoom level to calculate the tile size
-            double tileSize = RDUtils.CalcTileSizeRD(terrainBuilder.zoom);
-            
-            // calculate the geographic bounds of the weather grid
+            // using the settings to initialize the geographic bounds
             this.north = settings.defaultNorth;
             this.south = settings.defaultSouth;
             this.east = settings.defaultEast;

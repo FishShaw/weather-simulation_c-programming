@@ -7,6 +7,7 @@ namespace WeatherSystem.Mapping
     {
         [SerializeField] private WeatherGridMapper weatherGridMapper;
         [SerializeField] private TerrainTile terrainTile;
+        [SerializeField] private Material weatherMaterial;
 
         private void Awake()
         {
@@ -28,7 +29,19 @@ namespace WeatherSystem.Mapping
             // get the weather data UV mapping for the terrain tile
             Vector2[] weatherUVs = weatherGridMapper.GetTileWeatherUVs(terrainTile);
             
-            // TODO: use these UV coordinates to map weather data to the terrain tile
+            // update the material's UV coordinates
+            Material instanceMaterial = new Material(weatherMaterial);
+            instanceMaterial.SetVector("_WeatherUV_BL", weatherUVs[0]);
+            instanceMaterial.SetVector("_WeatherUV_BR", weatherUVs[1]);
+            instanceMaterial.SetVector("_WeatherUV_TL", weatherUVs[2]);
+            instanceMaterial.SetVector("_WeatherUV_TR", weatherUVs[3]);
+            
+            // apply the material to the terrain tile
+            MeshRenderer renderer = terrainTile.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                renderer.material = instanceMaterial;
+            }
         }
     }
 } 
