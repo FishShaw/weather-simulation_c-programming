@@ -1,52 +1,42 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using System;
+using TMPro;
+using WeatherSystem.Core;
 
 namespace WeatherSystem.TimeManagement
 {
     public class TimelineUI : MonoBehaviour
     {
-        [Header("UI References")]
-        [SerializeField] private Slider timelineSlider;
-        [SerializeField] private Button playButton;
-        [SerializeField] private Button pauseButton;
-        [SerializeField] private TMP_Text timeText;
-        [SerializeField] private TMP_Text speedText;
-        [SerializeField] private Button[] speedButtons;
-
         [Header("Components")]
         [SerializeField] private TimeController timeController;
+        [SerializeField] private Slider timeSlider;
+        [SerializeField] private TextMeshProUGUI timeText;
+        [SerializeField] private WeatherSettings settings;
 
-        private int[] speedValues = { 2, 5, 10 };
+        [Header("Time Display")]
+        [SerializeField] private string timeFormat = "HH:mm";
 
         private void Start()
         {
             if (timeController == null)
+                timeController = FindAnyObjectByType<TimeController>();
+
+            if (settings == null)
             {
-                timeController = FindObjectOfType<TimeController>();
+                var manager = FindAnyObjectByType<WeatherManager>();
+                if (manager != null)
+                {
+                    settings = manager.Settings;
+                }
             }
 
-            SetupUIElements();
-            SubscribeToEvents();
-        }
+            if (timeSlider != null)
+            {
+                timeSlider.onValueChanged.AddListener(OnSliderValueChanged);
+            }
 
-        private void SetupUIElements()
-        {
-            timelineSlider.onValueChanged.AddListener(OnSliderValueChanged);
-            playButton.onClick.AddListener(OnPlayClicked);
-            pauseButton.onClick.AddListener(OnPauseClicked);
-            SetupSpeedButtons();
-
-            UpdateTimeDisplay(timeController.GetCurrentTime());
-            UpdateSpeedText((int)timeController.GetCurrentSpeed());
-        }
-
-        private void SubscribeToEvents()
-        {
             timeController.OnTimeChanged += UpdateTimeDisplay;
-            timeController.OnPlaybackStateChanged += UpdatePlaybackUI;
-            timeController.OnPlaybackSpeedChanged += UpdateSpeedText;
         }
 
         private void OnSliderValueChanged(float value)
@@ -61,37 +51,10 @@ namespace WeatherSystem.TimeManagement
 
         private void UpdateTimeDisplay(DateTime time)
         {
-            timeText.text = time.ToString("MM/dd HH:mm");
-            timelineSlider.value = timeController.GetNormalizedTime();
-        }
-
-        private void UpdatePlaybackUI(bool isPlaying)
-        {
-            playButton.gameObject.SetActive(!isPlaying);
-            pauseButton.gameObject.SetActive(isPlaying);
-        }
-
-        private void OnPlayClicked() => timeController.Play();
-        private void OnPauseClicked() => timeController.Pause();
-
-        private void SetupSpeedButtons()
-        {
-            for (int i = 0; i < speedButtons.Length; i++)
+            if (timeText != null)
             {
-                int speedIndex = i;
-                speedButtons[i].onClick.AddListener(() => OnSpeedButtonClicked(speedValues[speedIndex]));
+                timeText.text = time.ToString(timeFormat);
             }
-        }
-
-        private void OnSpeedButtonClicked(int speedValue)
-        {
-            timeController.SetPlaybackSpeed((TimeController.PlaybackSpeed)speedValue);
-            UpdateSpeedText(speedValue);
-        }
-
-        private void UpdateSpeedText(int speed)
-        {
-            speedText.text = speed == 1 ? "normal" : $"{speed}x";
         }
 
         private void OnDestroy()
@@ -99,7 +62,11 @@ namespace WeatherSystem.TimeManagement
             if (timeController != null)
             {
                 timeController.OnTimeChanged -= UpdateTimeDisplay;
-                timeController.OnPlaybackStateChanged -= UpdatePlaybackUI;
+            }
+
+            if (timeSlider != null)
+            {
+                timeSlider.onValueChanged.RemoveListener(OnSliderValueChanged);
             }
         }
     }

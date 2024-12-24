@@ -7,111 +7,49 @@ namespace WeatherSystem.TimeManagement
 {
     public class TimeController : MonoBehaviour
     {
-        [SerializeField] private WeatherSettings settings;
+        [Header("Components")]
         [SerializeField] private WeatherDataLoader dataLoader;
-        
+        [SerializeField] private WeatherSettings settings;
+
+        [Header("Time Settings")]
+        [SerializeField] private float timeScale = 1f;
+        [SerializeField] private DateTime startTime;
         private DateTime currentTime;
-        private DateTime startTime;
-        private DateTime endTime;
-        private bool isPlaying = false;
-        private float playbackSpeed = 1.0f;
-        private float accumulatedTime = 0f;
 
         public event Action<DateTime> OnTimeChanged;
-        public event Action<bool> OnPlaybackStateChanged;
 
         private void Start()
         {
             if (dataLoader == null)
-            {
-                dataLoader = FindObjectOfType<WeatherDataLoader>();
-            }
+                dataLoader = FindFirstObjectByType<WeatherDataLoader>();
 
-            // Initialize with the data loader's time range
-            startTime = new DateTime(2024, 7, 9, 12, 0, 0);
-            endTime = new DateTime(2024, 7, 10, 4, 0, 0);
+            if (settings == null)
+                settings = FindFirstObjectByType<WeatherManager>()?.Settings;
+
             currentTime = startTime;
+            OnTimeChanged?.Invoke(currentTime);
         }
 
         private void Update()
         {
-            if (isPlaying)
-            {
-                accumulatedTime += Time.deltaTime * playbackSpeed;
-                if (accumulatedTime >= settings.updateInterval)
-                {
-                    accumulatedTime = 0f;
-                    AdvanceTime();
-                    WeatherManager.Instance.UpdateWeatherData();
-                }
-            }
+            UpdateTime();
         }
 
-        private void AdvanceTime()
+        private void UpdateTime()
         {
-            currentTime = currentTime.AddMinutes(1);
-            if (currentTime > endTime)
-            {
-                currentTime = startTime;
-            }
+            currentTime = currentTime.AddSeconds(Time.deltaTime * timeScale);
             OnTimeChanged?.Invoke(currentTime);
         }
-
-        public void Play()
-        {
-            isPlaying = true;
-            OnPlaybackStateChanged?.Invoke(isPlaying);
-        }
-
-        public void Pause()
-        {
-            isPlaying = false;
-            OnPlaybackStateChanged?.Invoke(isPlaying);
-        }
-
-        public void SetTime(DateTime newTime)
-        {
-            if (newTime >= startTime && newTime <= endTime)
-            {
-                currentTime = newTime;
-                OnTimeChanged?.Invoke(currentTime);
-            }
-        }
-
-        public enum PlaybackSpeed
-        {
-            Normal = 1,
-            Double = 2,
-            Fast = 5,
-            VeryFast = 10
-        }
-
-        private PlaybackSpeed currentSpeed = PlaybackSpeed.Normal;
-        
-        public void SetPlaybackSpeed(PlaybackSpeed speed)
-        {
-            currentSpeed = speed;
-            playbackSpeed = (float)speed;
-            OnPlaybackSpeedChanged?.Invoke((int)currentSpeed);
-        }
-
-        public PlaybackSpeed GetCurrentSpeed()
-        {
-            return currentSpeed;
-        }
-
-        public event Action<int> OnPlaybackSpeedChanged;
 
         public DateTime GetCurrentTime()
         {
             return currentTime;
         }
 
-        public float GetNormalizedTime()
+        public void SetTime(DateTime time)
         {
-            TimeSpan totalDuration = endTime - startTime;
-            TimeSpan currentDuration = currentTime - startTime;
-            return (float)(currentDuration.TotalMinutes / totalDuration.TotalMinutes);
+            currentTime = time;
+            OnTimeChanged?.Invoke(currentTime);
         }
     }
 } 
