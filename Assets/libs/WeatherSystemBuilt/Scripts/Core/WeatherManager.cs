@@ -22,8 +22,15 @@ namespace WeatherSystem.Core
         [SerializeField] private float updateInterval = 0.5f;
         private float timeSinceLastUpdate = 0f;
 
-        private List<RainController> rainControllers = new List<RainController>();
-        private List<WindController> windControllers = new List<WindController>();
+        private List<WeatherVFXController> vfxControllers = new List<WeatherVFXController>();
+
+        [Header("Visualization")]
+        [SerializeField] private Material weatherDataMaterial;
+        [SerializeField] private bool showWeatherTexture = false;
+
+        private List<TerrainTileMapper> terrainMappers = new List<TerrainTileMapper>();
+
+        public WeatherSettings Settings => settings;
 
         private void Awake()
         {
@@ -37,36 +44,37 @@ namespace WeatherSystem.Core
                 return;
             }
 
-            InitializeComponents();
-        }
-
-        private void InitializeComponents()
-        {
-            if (settings == null)
-            {
-                Debug.LogError("Weather Settings not assigned!");
-                return;
-            }
-
-            if (gridMapper == null)
-                gridMapper = GetComponent<WeatherGridMapper>();
-
-            if (timeController == null)
-                timeController = FindObjectOfType<TimeController>();
-
-            if (dataLoader == null)
-                dataLoader = FindObjectOfType<WeatherDataLoader>();
-
             Initialize();
         }
 
         private void Initialize()
         {
+            if (gridMapper == null)
+                gridMapper = FindFirstObjectByType<WeatherGridMapper>();
+
+            if (timeController == null)
+                timeController = FindFirstObjectByType<TimeController>();
+
+            if (dataLoader == null)
+                dataLoader = FindFirstObjectByType<WeatherDataLoader>();
+
             gridMapper?.Initialize();
             dataLoader?.Initialize();
-            
-            rainControllers.AddRange(FindObjectsOfType<RainController>());
-            windControllers.AddRange(FindObjectsOfType<WindController>());
+
+            // 获取所有VFX控制器
+            vfxControllers.AddRange(FindObjectsByType<WeatherVFXController>(FindObjectsSortMode.None));
+
+            // 获取所有地形映射器
+            terrainMappers.AddRange(FindObjectsByType<TerrainTileMapper>(FindObjectsSortMode.None));
+
+            // 初始化材质
+            if (weatherDataMaterial != null)
+            {
+                weatherDataMaterial.SetFloat("_RainfallScale", settings.rainfallScale);
+                weatherDataMaterial.SetFloat("_WindScale", settings.windScale);
+                weatherDataMaterial.SetFloat("_WindOffset", settings.windOffset);
+                weatherDataMaterial.SetFloat("_Opacity", showWeatherTexture ? 1 : 0);
+            }
         }
 
         private void Update()
@@ -88,13 +96,44 @@ namespace WeatherSystem.Core
             
             if (interpolatedData != null)
             {
-                foreach (var controller in rainControllers)
+                UpdateMaterialData(interpolatedData);
+                
+                UpdateTerrainMapping();
+                
+                foreach (var controller in vfxControllers)
                 {
-                    controller.UpdateRainEffect(currentTime);
+                    controller.UpdateWeatherEffects(currentTime);
                 }
-                foreach (var controller in windControllers)
+            }
+        }
+
+        private void UpdateMaterialData(WeatherData data)
+        {
+            if (weatherDataMaterial == null) return;
+            
+            weatherDataMaterial.SetTexture("_RainfallTex", data.rainfallTexture);
+            weatherDataMaterial.SetTexture("_WindUTex", data.windUTexture);
+            weatherDataMaterial.SetTexture("_WindVTex", data.windVTexture);
+        }
+
+        private void UpdateTerrainMapping()
+        {
+            foreach (var mapper in terrainMappers)
+            {
+                Vector2[] uvs = mapper.GetWeatherUVs();
+                if (uvs != null)
                 {
-                    controller.UpdateWindEffect(currentTime);
+                    Material instanceMaterial = new Material(weatherDataMaterial);
+                    instanceMaterial.SetVector("_WeatherUV_BL", uvs[0]);
+                    instanceMaterial.SetVector("_WeatherUV_BR", uvs[1]);
+                    instanceMaterial.SetVector("_WeatherUV_TL", uvs[2]);
+                    instanceMaterial.SetVector("_WeatherUV_TR", uvs[3]);
+                    
+                    MeshRenderer renderer = mapper.GetComponent<MeshRenderer>();
+                    if (renderer != null)
+                    {
+                        renderer.material = instanceMaterial;
+                    }
                 }
             }
         }
