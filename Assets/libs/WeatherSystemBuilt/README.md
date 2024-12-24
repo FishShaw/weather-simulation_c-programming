@@ -19,8 +19,7 @@ WeatherSystemBuilt/
 │   │   ├── TimeController.cs
 │   │   └── TimelineUI.cs
 │   └── VFX/                 # Visual effects related
-│       ├── RainController.cs
-│       └── WindController.cs
+│       ├── └── WeatherVFXController.cs
 ├── Shaders/                 # Custom shader files
 ├── Materials/               # Material files
 ├── Prefabs/                 # Prefab assets
