@@ -20,12 +20,15 @@ namespace WeatherSystem.DataHandling
 
         public float GetRainfallValue(Vector2Int gridPos)
         {
+            if (rainfallTexture == null) return 0f;
             Color pixel = rainfallTexture.GetPixel(gridPos.x, gridPos.y);
             return pixel.r * rainfallScaleFactor;
         }
 
         public Vector2 GetWindValue(Vector2Int gridPos)
         {
+            if (windUTexture == null || windVTexture == null) return Vector2.zero;
+            
             Color pixelU = windUTexture.GetPixel(gridPos.x, gridPos.y);
             Color pixelV = windVTexture.GetPixel(gridPos.x, gridPos.y);
             
