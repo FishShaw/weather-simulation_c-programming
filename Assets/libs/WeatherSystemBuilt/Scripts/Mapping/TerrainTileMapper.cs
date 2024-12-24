@@ -7,7 +7,6 @@ namespace WeatherSystem.Mapping
     {
         [SerializeField] private WeatherGridMapper weatherGridMapper;
         [SerializeField] private TerrainTile terrainTile;
-        [SerializeField] private Material weatherMaterial;
 
         private void Awake()
         {
@@ -18,30 +17,21 @@ namespace WeatherSystem.Mapping
 
             if (weatherGridMapper == null)
             {
-                weatherGridMapper = FindObjectOfType<WeatherGridMapper>();
+                weatherGridMapper = FindAnyObjectByType<WeatherGridMapper>();
             }
         }
 
-        public void UpdateWeatherMapping()
+        // 只返回UV坐标映射数据
+        public Vector2[] GetWeatherUVs()
         {
-            if (terrainTile == null || weatherGridMapper == null) return;
+            if (terrainTile == null || weatherGridMapper == null) return null;
+            return weatherGridMapper.GetTileWeatherUVs(terrainTile);
+        }
 
-            // get the weather data UV mapping for the terrain tile
-            Vector2[] weatherUVs = weatherGridMapper.GetTileWeatherUVs(terrainTile);
-            
-            // update the material's UV coordinates
-            Material instanceMaterial = new Material(weatherMaterial);
-            instanceMaterial.SetVector("_WeatherUV_BL", weatherUVs[0]);
-            instanceMaterial.SetVector("_WeatherUV_BR", weatherUVs[1]);
-            instanceMaterial.SetVector("_WeatherUV_TL", weatherUVs[2]);
-            instanceMaterial.SetVector("_WeatherUV_TR", weatherUVs[3]);
-            
-            // apply the material to the terrain tile
-            MeshRenderer renderer = terrainTile.GetComponent<MeshRenderer>();
-            if (renderer != null)
-            {
-                renderer.material = instanceMaterial;
-            }
+        // 获取地形tile的位置信息
+        public Vector3 GetTilePosition()
+        {
+            return terrainTile != null ? terrainTile.transform.position : Vector3.zero;
         }
     }
 } 

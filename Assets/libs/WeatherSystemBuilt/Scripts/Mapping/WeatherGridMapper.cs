@@ -16,13 +16,21 @@ namespace WeatherSystem.Mapping
         {
             if (settings == null)
             {
-                Debug.LogError("Weather Settings not assigned!");
-                return;
+                var manager = FindAnyObjectByType<WeatherManager>();
+                if (manager != null)
+                {
+                    settings = manager.Settings;
+                }
+                else
+                {
+                    Debug.LogError("Weather Settings not assigned!");
+                    return;
+                }
             }
 
             if (terrainBuilder == null)
             {
-                terrainBuilder = FindObjectOfType<TerrainBuilder>();
+                terrainBuilder = FindAnyObjectByType<TerrainBuilder>();
                 if (terrainBuilder == null)
                 {
                     Debug.LogError("TerrainBuilder not found!");
@@ -107,6 +115,16 @@ namespace WeatherSystem.Mapping
             uvs[3] = GridToUVCoordinate(gridPos);
 
             return uvs;
+        }
+
+        public Vector2Int WorldToGridPosition(Vector3 worldPosition)
+        {
+            // Unity世界坐标系中，x对应RD的x，z对应RD的y
+            double rdX = worldPosition.x;
+            double rdY = worldPosition.z;
+            
+            // 使用现有的RD到网格坐标的转换方法
+            return RDToGridCoordinate(rdX, rdY);
         }
     }
 } 
