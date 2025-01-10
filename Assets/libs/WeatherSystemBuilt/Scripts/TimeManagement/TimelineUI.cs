@@ -24,11 +24,9 @@ public class TimelineUI : MonoBehaviour
     
     [Header("Settings")]
     [SerializeField] private string timeFormat = "MM/dd HH:mm";
-    [SerializeField] private float updateInterval = 0.5f;   // Update interval
     
     private WeatherDataLoader dataLoader;
     private WeatherGridMapper gridMapper;
-    private float timeSinceLastUpdate = 0f;
 
     private void Start()
     {
@@ -43,13 +41,7 @@ public class TimelineUI : MonoBehaviour
 
     private void Update()
     {
-        // Periodically update weather info display
-        timeSinceLastUpdate += Time.deltaTime;
-        if (timeSinceLastUpdate >= updateInterval)
-        {
-            timeSinceLastUpdate = 0f;
-            UpdateWeatherInfoDisplay();
-        }
+        UpdateWeatherInfoDisplay();
     }
 
     private void UpdateWeatherInfoDisplay()

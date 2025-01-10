@@ -79,17 +79,6 @@ namespace WeatherSystem.DataHandling
 
         public WeatherData GetInterpolatedWeatherData(DateTime time)
         {
-            // 将时间规整到最近的5分钟
-            int minutes = time.Minute;
-            int roundedMinutes = (minutes / 5) * 5;
-            DateTime roundedTime = new DateTime(time.Year, time.Month, time.Day, time.Hour, roundedMinutes, 0);
-
-            // 检查缓存中是否已有插值数据
-            if (interpolatedDataCache.ContainsKey(roundedTime))
-            {
-                return interpolatedDataCache[roundedTime];
-            }
-
             // 找到小时数据点
             DateTime prevHour = time.Date.AddHours(time.Hour);
             DateTime nextHour = prevHour.AddHours(1);
@@ -102,19 +91,16 @@ namespace WeatherSystem.DataHandling
                 return prevData ?? nextData;
             }
 
-            // 计算5分钟间隔的插值
-            float t = (float)(roundedTime - prevHour).TotalMinutes / 60f;
+            // 计算插值
+            float t = (float)(time - prevHour).TotalMinutes / 60f;
             
             WeatherData interpolatedData = new WeatherData
             {
-                timestamp = roundedTime,
+                timestamp = time,
                 rainfallTexture = InterpolateTexture(prevData.rainfallTexture, nextData.rainfallTexture, t),
                 windUTexture = InterpolateTexture(prevData.windUTexture, nextData.windUTexture, t),
                 windVTexture = InterpolateTexture(prevData.windVTexture, nextData.windVTexture, t)
             };
-
-            // 缓存插值结果
-            interpolatedDataCache[roundedTime] = interpolatedData;
 
             return interpolatedData;
         }

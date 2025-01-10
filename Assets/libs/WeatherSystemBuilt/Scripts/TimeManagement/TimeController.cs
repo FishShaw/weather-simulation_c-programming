@@ -15,14 +15,18 @@ namespace WeatherSystem.TimeManagement
         [SerializeField] private DateTime startTime = new DateTime(2024, 7, 9, 12, 0, 0);
         private DateTime endTime = new DateTime(2024, 7, 10, 3, 0, 0);
         private DateTime currentTime;
+        private DateTime lastUpdateTime;
 
         [Header("Time Control")]
         [SerializeField] private float timeScale = 1f;
-        [SerializeField] private float normalSpeed = 60f;  // 每秒前进60秒（1分钟）
-        [SerializeField] private float fastSpeed = 300f;   // 每秒前进300秒（5分钟）
+        [SerializeField] private float normalSpeed = 300f;  // 每秒前进5分钟
+        [SerializeField] private float fastSpeed = 1800f;   // 每秒前进30分钟
         private bool isPlaying = false;
+        private float updateInterval => settings != null ? settings.updateInterval : 1.0f;
+        private float timeSinceLastUpdate = 0f;
 
         public event Action<DateTime> OnTimeChanged;
+        public bool IsPlaying => isPlaying;
 
         private void Start()
         {
@@ -33,20 +37,33 @@ namespace WeatherSystem.TimeManagement
                 settings = FindFirstObjectByType<WeatherManager>()?.Settings;
 
             currentTime = startTime;
+            lastUpdateTime = currentTime;
             OnTimeChanged?.Invoke(currentTime);
-            Debug.Log($"[TimeController] Initialized with time: {currentTime}");
         }
 
         private void Update()
         {
-            if (isPlaying && currentTime < endTime)
+            if (!isPlaying || currentTime >= endTime) return;
+
+            timeSinceLastUpdate += Time.deltaTime;
+            
+            if (timeSinceLastUpdate >= updateInterval)
             {
-                currentTime = currentTime.AddSeconds(Time.deltaTime * timeScale);
-                if (currentTime > endTime)
-                    currentTime = endTime;
+                float deltaTime = timeSinceLastUpdate * timeScale;
+                DateTime newTime = currentTime.AddSeconds(deltaTime);
                 
-                OnTimeChanged?.Invoke(currentTime);
-                Debug.Log($"[TimeController] Current time: {currentTime}, TimeScale: {timeScale}");
+                if (newTime > endTime)
+                    newTime = endTime;
+                    
+                if (newTime != currentTime)
+                {
+                    currentTime = newTime;
+                    lastUpdateTime = currentTime;
+                    OnTimeChanged?.Invoke(currentTime);
+                    Debug.Log($"[TimeController] Time updated: {currentTime}, Scale: {timeScale}");
+                }
+                
+                timeSinceLastUpdate = 0f;
             }
         }
 
@@ -58,7 +75,6 @@ namespace WeatherSystem.TimeManagement
             {
                 currentTime = time;
                 OnTimeChanged?.Invoke(currentTime);
-                Debug.Log($"[TimeController] Time set to: {currentTime}");
             }
         }
 
@@ -82,15 +98,6 @@ namespace WeatherSystem.TimeManagement
             {
                 timeScale = fastSpeed;
                 Debug.Log("[TimeController] Speed up");
-            }
-        }
-
-        public void SetNormalSpeed()
-        {
-            if (isPlaying)
-            {
-                timeScale = normalSpeed;
-                Debug.Log("[TimeController] Normal speed");
             }
         }
     }

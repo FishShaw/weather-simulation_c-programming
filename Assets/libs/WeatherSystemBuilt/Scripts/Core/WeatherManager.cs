@@ -18,16 +18,11 @@ namespace WeatherSystem.Core
         [SerializeField] private TimeController timeController;
         [SerializeField] private WeatherDataLoader dataLoader;
 
-        [Header("Update Settings")]
-        [SerializeField] private float updateInterval = 0.5f;
-        private float timeSinceLastUpdate = 0f;
-
-        private List<WeatherVFXController> vfxControllers = new List<WeatherVFXController>();
-
         [Header("Visualization")]
         [SerializeField] private Material weatherDataMaterial;
         [SerializeField] private bool showWeatherTexture = false;
 
+        private List<WeatherVFXController> vfxControllers = new List<WeatherVFXController>();
         private List<TerrainTileMapper> terrainMappers = new List<TerrainTileMapper>();
 
         public WeatherSettings Settings => settings;
@@ -79,25 +74,18 @@ namespace WeatherSystem.Core
 
         private void Update()
         {
-            timeSinceLastUpdate += Time.deltaTime;
-            if (timeSinceLastUpdate >= updateInterval)
-            {
-                timeSinceLastUpdate = 0f;
-                UpdateWeatherData();
-            }
+            if (!timeController.IsPlaying) return;
+            UpdateWeatherData();
         }
 
         public void UpdateWeatherData()
         {
-            if (timeController == null || dataLoader == null) return;
-
             DateTime currentTime = timeController.GetCurrentTime();
             WeatherData interpolatedData = dataLoader.GetInterpolatedWeatherData(currentTime);
             
             if (interpolatedData != null)
             {
                 UpdateMaterialData(interpolatedData);
-                
                 UpdateTerrainMapping();
                 
                 foreach (var controller in vfxControllers)
