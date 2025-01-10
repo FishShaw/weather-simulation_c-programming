@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using WeatherSystem.Core;
 using System.IO;
@@ -12,7 +13,7 @@ namespace WeatherSystem.DataHandling
         
         private Dictionary<DateTime, WeatherData> weatherDataCache = new Dictionary<DateTime, WeatherData>();
         private DateTime startTime = new DateTime(2024, 7, 9, 12, 0, 0);
-        private DateTime endTime = new DateTime(2024, 7, 10, 4, 0, 0);
+        private DateTime endTime = new DateTime(2024, 7, 10, 3, 0, 0);
 
         public void Initialize()
         {
@@ -31,29 +32,30 @@ namespace WeatherSystem.DataHandling
             while (currentTime <= endTime)
             {
                 LoadWeatherDataForTime(currentTime);
-                currentTime = currentTime.AddHours(1);
+                DateTime nextTime = currentTime.AddHours(1);
+                if (nextTime > endTime)
+                    break;
+                currentTime = nextTime;
             }
         }
 
         private void LoadWeatherDataForTime(DateTime time)
         {
-            string timeString = time.ToString("MMdd_HHmm_HHmm");
-            
-            // Load rainfall texture
-            string rainfallPath = Path.Combine(settings.dataPath, settings.rainfallPath, $"rainfall_{timeString}");
-            Texture2D rainfallTexture = Resources.Load<Texture2D>(rainfallPath);
+            if (time > endTime) return;
 
-            // Load wind textures
-            string windUPath = Path.Combine(settings.dataPath, settings.windPath, $"wind_u_10m_{timeString}");
-            string windVPath = Path.Combine(settings.dataPath, settings.windPath, $"wind_v_10m_{timeString}");
+            string timeString = time.ToString("MMdd");
+            string hourString = $"{time.Hour:D2}00_{(time.Hour + 1):D2}00";
+            string windHourString = $"{time.Hour:D2}00";
+            
+            string rainfallPath = $"Weatherdata/Texture_new_raw/rainfall/PNG/rainfall_{timeString}_{hourString}";
+            string windUPath = $"Weatherdata/Texture_new_raw/wind/PNG/wind_u_10m_{timeString}_{windHourString}";
+            string windVPath = $"Weatherdata/Texture_new_raw/wind/PNG/wind_v_10m_{timeString}_{windHourString}";
+            
+            Texture2D rainfallTexture = Resources.Load<Texture2D>(rainfallPath);
             Texture2D windUTexture = Resources.Load<Texture2D>(windUPath);
             Texture2D windVTexture = Resources.Load<Texture2D>(windVPath);
 
-            if (rainfallTexture == null || windUTexture == null || windVTexture == null)
-            {
-                Debug.LogError($"Failed to load weather data for time: {timeString}");
-                return;
-            }
+            if (rainfallTexture == null || windUTexture == null || windVTexture == null) return;
 
             WeatherData weatherData = new WeatherData
             {
@@ -72,8 +74,6 @@ namespace WeatherSystem.DataHandling
             {
                 return weatherDataCache[time];
             }
-            
-            Debug.LogWarning($"Weather data not found for time: {time}");
             return null;
         }
 
