@@ -22,7 +22,7 @@ namespace WeatherSystem.DataHandling
         {
             if (rainfallTexture == null) return 0f;
             Color pixel = rainfallTexture.GetPixel(gridPos.x, gridPos.y);
-            return pixel.r * rainfallScaleFactor;
+            return pixel.r / rainfallScaleFactor;
         }
 
         public Vector2 GetWindValue(Vector2Int gridPos)
