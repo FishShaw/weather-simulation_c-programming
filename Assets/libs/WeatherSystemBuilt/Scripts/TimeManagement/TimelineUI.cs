@@ -206,7 +206,7 @@ public class TimelineUI : MonoBehaviour
         DateTime endTime = new DateTime(2024, 7, 10, 3, 0, 0);
         TimeSpan totalDuration = endTime - startTime;
         
-        DateTime newTime = startTime.AddMinutes(totalDuration.TotalMinutes * value);
+        DateTime newTime = startTime.AddSeconds(totalDuration.TotalSeconds * value);
         timeController.SetTime(newTime);
         Debug.Log($"[TimelineUI] Slider changed to: {value}, Time set to: {newTime}");
     }
@@ -215,7 +215,7 @@ public class TimelineUI : MonoBehaviour
     {
         if (timeText != null)
         {
-            timeText.text = time.ToString(timeFormat);
+            timeText.text = time.ToString(timeFormat + ":ss");
             Debug.Log($"[TimelineUI] Time display updated: {time}");
         }
     }
