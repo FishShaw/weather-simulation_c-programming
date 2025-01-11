@@ -9,7 +9,6 @@ namespace WeatherSystem.Mapping
         [SerializeField] private WeatherSettings settings;
         [SerializeField] private TerrainBuilder terrainBuilder;
 
-        private double north, south, east, west;
         private bool isInitialized = false;
 
         public void Initialize()
@@ -37,17 +36,11 @@ namespace WeatherSystem.Mapping
                     return;
                 }
             }
-
-            // using the settings to initialize the geographic bounds
-            this.north = settings.defaultNorth;
-            this.south = settings.defaultSouth;
-            this.east = settings.defaultEast;
-            this.west = settings.defaultWest;
             
             isInitialized = true;
         }
 
-        // convert geographic coordinates to weather grid coordinates
+        // Convert geographic coordinates (WGS84) to weather grid coordinates
         public Vector2Int GeographicToGridCoordinate(double latitude, double longitude)
         {
             if (!isInitialized)
@@ -56,74 +49,85 @@ namespace WeatherSystem.Mapping
                 return Vector2Int.zero;
             }
 
-            int x = Mathf.FloorToInt((float)((longitude - west) / (east - west) * settings.gridWidth));
-            int y = Mathf.FloorToInt((float)((latitude - south) / (north - south) * settings.gridHeight));
+            // Calculate normalized position within bounds
+            double normalizedLon = longitude - settings.defaultWest;
+            double normalizedLat = latitude - settings.defaultSouth;
             
-            return new Vector2Int(
-                Mathf.Clamp(x, 0, settings.gridWidth - 1),
-                Mathf.Clamp(y, 0, settings.gridHeight - 1)
-            );
+            // Calculate grid indices
+            double xDouble = normalizedLon / settings.lonStep;
+            double yDouble = normalizedLat / settings.latStep;
+            
+            // Convert to integers and clamp to valid range
+            int x = Mathf.Clamp(Mathf.FloorToInt((float)xDouble), 0, settings.gridWidth - 1);
+            int y = Mathf.Clamp(Mathf.FloorToInt((float)yDouble), 0, settings.gridHeight - 1);
+            
+            return new Vector2Int(x, y);
         }
 
-        // convert weather grid coordinates to UV coordinates
+        // Convert weather grid coordinates to UV coordinates for texture sampling
         public Vector2 GridToUVCoordinate(Vector2Int gridPos)
         {
-            return new Vector2(
-                (float)gridPos.x / settings.gridWidth,
-                (float)gridPos.y / settings.gridHeight
-            );
+            const int GRID_SIZE = 390;
+            return new Vector2((float)gridPos.x / GRID_SIZE, (float)gridPos.y / GRID_SIZE);
         }
 
-        // convert RD coordinates to weather grid coordinates
+        // Convert RD coordinates to weather grid coordinates
         public Vector2Int RDToGridCoordinate(double rdX, double rdY)
         {
-            // first convert RD coordinates to WGS84
+            // Convert RD to WGS84
             double lat, lon;
             RDUtils.RD2GPS(rdX, rdY, out lat, out lon);
             
-            // then convert to grid coordinates
+            // Convert WGS84 to grid coordinates
             return GeographicToGridCoordinate(lat, lon);
         }
 
-        // get the weather data UV mapping for a specified terrain tile
+        // Get UV coordinates for all corners of a terrain tile
         public Vector2[] GetTileWeatherUVs(TerrainTile tile)
         {
-            Vector2[] uvs = new Vector2[4]; // 瓦片的四个角
+            Vector2[] uvs = new Vector2[4];
             
-            // get the RD coordinates of the tile
+            // Get tile properties
             double tileSize = RDUtils.CalcTileSizeRD(terrainBuilder.zoom);
             double tileX = tile.originRDX;
             double tileY = tile.originRDY;
 
-            // calculate the UV coordinates of the four corners
+            // Calculate UV coordinates for each corner
             Vector2Int gridPos;
             
-            // bottom left corner
+            // Bottom left
             gridPos = RDToGridCoordinate(tileX, tileY);
             uvs[0] = GridToUVCoordinate(gridPos);
             
-            // bottom right corner
+            // Bottom right
             gridPos = RDToGridCoordinate(tileX + tileSize, tileY);
             uvs[1] = GridToUVCoordinate(gridPos);
             
-            // top left corner
+            // Top left
             gridPos = RDToGridCoordinate(tileX, tileY + tileSize);
             uvs[2] = GridToUVCoordinate(gridPos);
             
-            // top right corner
+            // Top right
             gridPos = RDToGridCoordinate(tileX + tileSize, tileY + tileSize);
             uvs[3] = GridToUVCoordinate(gridPos);
 
             return uvs;
         }
 
+        // Convert Unity world position to weather grid coordinates
         public Vector2Int WorldToGridPosition(Vector3 worldPosition)
         {
-            // Unity世界坐标系中，x对应RD的x，z对应RD的y
-            double rdX = worldPosition.x;
-            double rdY = worldPosition.z;
+            if (!isInitialized || terrainBuilder == null)
+            {
+                Debug.LogError("WeatherGridMapper not initialized or TerrainBuilder not found!");
+                return Vector2Int.zero;
+            }
             
-            // 使用现有的RD到网格坐标的转换方法
+            // Convert world position to RD coordinates
+            double rdX = terrainBuilder.originRDX + worldPosition.x;
+            double rdY = terrainBuilder.originRDY + worldPosition.z;
+            
+            // Convert RD coordinates to weather grid coordinates
             return RDToGridCoordinate(rdX, rdY);
         }
     }

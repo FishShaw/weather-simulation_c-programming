@@ -17,6 +17,34 @@ namespace WeatherSystem.Core
         public double defaultEast = 11.281;   // lon_max
         public double defaultWest = 0.0;      // lon_min
 
+        // 动态计算网格步长
+        private float _latStep;
+        private float _lonStep;
+        
+        public float latStep 
+        { 
+            get 
+            {
+                if (_latStep == 0)
+                {
+                    _latStep = (float)((defaultNorth - defaultSouth) / (gridHeight - 1));
+                }
+                return _latStep;
+            }
+        }
+        
+        public float lonStep
+        {
+            get 
+            {
+                if (_lonStep == 0)
+                {
+                    _lonStep = (float)((defaultEast - defaultWest) / (gridWidth - 1));
+                }
+                return _lonStep;
+            }
+        }
+
         [Header("Data Settings")]
         public string dataPath = "WeatherData";
         public float updateInterval = 1.0f;
