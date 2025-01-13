@@ -1,9 +1,7 @@
 using UnityEngine;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using WeatherSystem.Core;
-using System.IO;
 
 namespace WeatherSystem.DataHandling
 {
@@ -22,7 +20,6 @@ namespace WeatherSystem.DataHandling
                 Debug.LogError("Weather Settings not assigned!");
                 return;
             }
-            
             PreloadWeatherData();
         }
 
@@ -32,10 +29,7 @@ namespace WeatherSystem.DataHandling
             while (currentTime <= endTime)
             {
                 LoadWeatherDataForTime(currentTime);
-                DateTime nextTime = currentTime.AddHours(1);
-                if (nextTime > endTime)
-                    break;
-                currentTime = nextTime;
+                currentTime = currentTime.AddHours(1);
             }
         }
 
@@ -64,22 +58,13 @@ namespace WeatherSystem.DataHandling
                 windVTexture = windVTexture,
                 timestamp = time
             };
-
+            
+            weatherData.ProcessTextureData();
             weatherDataCache[time] = weatherData;
-        }
-
-        public WeatherData GetWeatherData(DateTime time)
-        {
-            if (weatherDataCache.ContainsKey(time))
-            {
-                return weatherDataCache[time];
-            }
-            return null;
         }
 
         public WeatherData GetInterpolatedWeatherData(DateTime time)
         {
-            // 找到小时数据点
             DateTime prevHour = time.Date.AddHours(time.Hour);
             DateTime nextHour = prevHour.AddHours(1);
 
@@ -91,44 +76,24 @@ namespace WeatherSystem.DataHandling
                 return prevData ?? nextData;
             }
 
-            // 计算插值
             float t = (float)(time - prevHour).TotalMinutes / 60f;
             
             WeatherData interpolatedData = new WeatherData
             {
                 timestamp = time,
-                rainfallTexture = InterpolateTexture(prevData.rainfallTexture, nextData.rainfallTexture, t),
-                windUTexture = InterpolateTexture(prevData.windUTexture, nextData.windUTexture, t),
-                windVTexture = InterpolateTexture(prevData.windVTexture, nextData.windVTexture, t)
+                rainfallTexture = prevData.rainfallTexture,  // 使用前一时刻的纹理用于显示
+                windUTexture = prevData.windUTexture,
+                windVTexture = prevData.windVTexture
             };
 
+            // 设置插值参数
+            interpolatedData.SetupInterpolation(prevData, nextData, t);
             return interpolatedData;
         }
 
-        private Texture2D InterpolateTexture(Texture2D tex1, Texture2D tex2, float t)
+        private WeatherData GetWeatherData(DateTime time)
         {
-            if (tex1 == null || tex2 == null) return null;
-            
-            int width = tex1.width;
-            int height = tex1.height;
-            
-            Texture2D result = new Texture2D(width, height);
-            
-            for (int x = 0; x < width; x++)
-            {
-                for (int y = 0; y < height; y++)
-                {
-                    Color color1 = tex1.GetPixel(x, y);
-                    Color color2 = tex2.GetPixel(x, y);
-                    result.SetPixel(x, y, Color.Lerp(color1, color2, t));
-                }
-            }
-            
-            result.Apply();
-            return result;
+            return weatherDataCache.ContainsKey(time) ? weatherDataCache[time] : null;
         }
-
-        // 添加插值数据缓存
-        private Dictionary<DateTime, WeatherData> interpolatedDataCache = new Dictionary<DateTime, WeatherData>();
     }
 } 
