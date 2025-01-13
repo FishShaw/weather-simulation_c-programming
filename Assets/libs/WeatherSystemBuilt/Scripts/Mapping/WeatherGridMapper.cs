@@ -8,22 +8,24 @@ namespace WeatherSystem.Mapping
     {
         [SerializeField] private WeatherSettings settings;
         [SerializeField] private TerrainBuilder terrainBuilder;
-
         private bool isInitialized = false;
 
         public void Initialize()
         {
+            if (!ValidateComponents()) return;
+            isInitialized = true;
+        }
+
+        private bool ValidateComponents()
+        {
             if (settings == null)
             {
                 var manager = FindAnyObjectByType<WeatherManager>();
-                if (manager != null)
-                {
-                    settings = manager.Settings;
-                }
+                if (manager != null) settings = manager.Settings;
                 else
                 {
                     Debug.LogError("Weather Settings not assigned!");
-                    return;
+                    return false;
                 }
             }
 
@@ -33,102 +35,64 @@ namespace WeatherSystem.Mapping
                 if (terrainBuilder == null)
                 {
                     Debug.LogError("TerrainBuilder not found!");
-                    return;
+                    return false;
                 }
             }
-            
-            isInitialized = true;
+            return true;
         }
 
-        // Convert geographic coordinates (WGS84) to weather grid coordinates
-        public Vector2Int GeographicToGridCoordinate(double latitude, double longitude)
+        // 1. World -> RD
+        public (double rdX, double rdY) WorldToRD(Vector3 worldPosition)
         {
-            if (!isInitialized)
-            {
-                Debug.LogError("WeatherGridMapper not initialized!");
-                return Vector2Int.zero;
-            }
+            if (!isInitialized) return (0, 0);
+            return (
+                terrainBuilder.originRDX + worldPosition.x,
+                terrainBuilder.originRDY + worldPosition.z
+            );
+        }
 
-            // Calculate normalized position within bounds
+        // 2. RD -> WGS84
+        public (double lat, double lon) RDToGeographic(double rdX, double rdY)
+        {
+            RDUtils.RD2GPS(rdX, rdY, out double lat, out double lon);
+            return (lat, lon);
+        }
+
+        // 3. WGS84 -> Grid
+        public Vector2Int GeographicToGrid(double latitude, double longitude)
+        {
+            if (!isInitialized) return Vector2Int.zero;
+            
             double normalizedLon = longitude - settings.defaultWest;
             double normalizedLat = latitude - settings.defaultSouth;
             
-            // Calculate grid indices
             double xDouble = normalizedLon / settings.lonStep;
             double yDouble = normalizedLat / settings.latStep;
             
-            // Convert to integers and clamp to valid range
-            int x = Mathf.Clamp(Mathf.FloorToInt((float)xDouble), 0, settings.gridWidth - 1);
-            int y = Mathf.Clamp(Mathf.FloorToInt((float)yDouble), 0, settings.gridHeight - 1);
-            
-            return new Vector2Int(x, y);
+            return new Vector2Int(
+                Mathf.Clamp(Mathf.FloorToInt((float)xDouble), 0, settings.gridWidth - 1),
+                Mathf.Clamp(Mathf.FloorToInt((float)yDouble), 0, settings.gridHeight - 1)
+            );
         }
 
-        // Convert weather grid coordinates to UV coordinates for texture sampling
-        public Vector2 GridToUVCoordinate(Vector2Int gridPos)
+        // 4. Grid -> UV
+        public Vector2 GridToUV(Vector2Int gridPos)
         {
             const int GRID_SIZE = 390;
             return new Vector2((float)gridPos.x / GRID_SIZE, (float)gridPos.y / GRID_SIZE);
         }
 
-        // Convert RD coordinates to weather grid coordinates
-        public Vector2Int RDToGridCoordinate(double rdX, double rdY)
+        // combination: World -> Grid
+        public Vector2Int WorldToGrid(Vector3 worldPosition)
         {
-            // Convert RD to WGS84
-            double lat, lon;
-            RDUtils.RD2GPS(rdX, rdY, out lat, out lon);
-            
-            // Convert WGS84 to grid coordinates
-            return GeographicToGridCoordinate(lat, lon);
+            var (rdX, rdY) = WorldToRD(worldPosition);
+            var (lat, lon) = RDToGeographic(rdX, rdY);
+            return GeographicToGrid(lat, lon);
         }
 
-        // Get UV coordinates for all corners of a terrain tile
-        public Vector2[] GetTileWeatherUVs(TerrainTile tile)
+        public TerrainBuilder GetTerrainBuilder()
         {
-            Vector2[] uvs = new Vector2[4];
-            
-            // Get tile properties
-            double tileSize = RDUtils.CalcTileSizeRD(terrainBuilder.zoom);
-            double tileX = tile.originRDX;
-            double tileY = tile.originRDY;
-
-            // Calculate UV coordinates for each corner
-            Vector2Int gridPos;
-            
-            // Bottom left
-            gridPos = RDToGridCoordinate(tileX, tileY);
-            uvs[0] = GridToUVCoordinate(gridPos);
-            
-            // Bottom right
-            gridPos = RDToGridCoordinate(tileX + tileSize, tileY);
-            uvs[1] = GridToUVCoordinate(gridPos);
-            
-            // Top left
-            gridPos = RDToGridCoordinate(tileX, tileY + tileSize);
-            uvs[2] = GridToUVCoordinate(gridPos);
-            
-            // Top right
-            gridPos = RDToGridCoordinate(tileX + tileSize, tileY + tileSize);
-            uvs[3] = GridToUVCoordinate(gridPos);
-
-            return uvs;
-        }
-
-        // Convert Unity world position to weather grid coordinates
-        public Vector2Int WorldToGridPosition(Vector3 worldPosition)
-        {
-            if (!isInitialized || terrainBuilder == null)
-            {
-                Debug.LogError("WeatherGridMapper not initialized or TerrainBuilder not found!");
-                return Vector2Int.zero;
-            }
-            
-            // Convert world position to RD coordinates
-            double rdX = terrainBuilder.originRDX + worldPosition.x;
-            double rdY = terrainBuilder.originRDY + worldPosition.z;
-            
-            // Convert RD coordinates to weather grid coordinates
-            return RDToGridCoordinate(rdX, rdY);
+            return terrainBuilder;
         }
     }
 } 
