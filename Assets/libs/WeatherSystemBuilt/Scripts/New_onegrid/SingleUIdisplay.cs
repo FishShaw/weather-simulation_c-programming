@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using WeatherSystem.SingleGrid;
+using Wander; 
 
 public class WeatherInfoDisplay : MonoBehaviour
 {
@@ -34,10 +35,7 @@ public class WeatherInfoDisplay : MonoBehaviour
         Vector3 cameraPos = Camera.main.transform.position;
         Vector2Int gridPos = gridMapper.WorldToGrid(cameraPos);
         
-        // 获取RD坐标
         var (rdX, rdY) = gridMapper.WorldToRD(cameraPos);
-        
-        // 获取地理坐标（WGS84）
         var (lat, lon) = gridMapper.RDToGeographic(rdX, rdY);
 
         float windSpeed = wind.magnitude;

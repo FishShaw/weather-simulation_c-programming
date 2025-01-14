@@ -8,6 +8,7 @@ namespace WeatherSystem.SingleGrid
     public class SingleWeatherDataLoader : MonoBehaviour
     {
         [SerializeField] private WeatherSettings settings;
+        [SerializeField] private SingleSimpleTimeController timeController;
         
         private Dictionary<DateTime, SingleWeatherData> weatherDataCache = new Dictionary<DateTime, SingleWeatherData>();
         private Vector2Int currentGridPosition;
@@ -16,6 +17,9 @@ namespace WeatherSystem.SingleGrid
 
         public void Initialize()
         {
+            if (timeController == null)
+                timeController = FindFirstObjectByType<SingleSimpleTimeController>();
+                
             LoadTimeSeriesData();
         }
 
@@ -112,6 +116,14 @@ namespace WeatherSystem.SingleGrid
                     Resources.UnloadAsset(data.windVTexture);
             }
             weatherDataCache.Clear();
+        }
+
+        public SingleWeatherData GetCurrentWeatherData()
+        {
+            if (timeController == null) return null;
+            
+            DateTime currentTime = timeController.GetCurrentTime();
+            return GetInterpolatedWeatherData(currentTime);
         }
     }
 }
