@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a29f87fb988d264ca2c8b6c0570214c, type: 3}
+  m_Name: WeatherSettings
+  m_EditorClassIdentifier: 
+  gridWidth: 390
+  gridHeight: 390
+  gridResolution: 2.5
+  defaultNorth: 56.002
+  defaultSouth: 49
+  defaultEast: 11.281
+  defaultWest: 0
+  dataPath: WeatherData
+  updateInterval: 1
+  rainfallPath: Texture_new_raw/rainfall/PNG
+  windPath: Texture_new_raw/wind/PNG
+  metadataPath: Metadata_new_raw
+  rainfallScale: 100
+  windScale: 327.67
+  windOffset: 100
+  showWeatherTexture: 1
+  weatherDataMaterial: {fileID: 2100000, guid: 083cb832791f5eb4aace3fa628869500, type: 2}
+  maxRainRate: 1000
+  maxWindSpeed: 30
+  particleLifetime: 2
+  windInfluence: 1
