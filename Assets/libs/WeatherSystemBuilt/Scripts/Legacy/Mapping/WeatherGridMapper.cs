@@ -66,8 +66,8 @@ namespace WeatherSystem.Mapping
             double normalizedLon = longitude - settings.defaultWest;
             double normalizedLat = latitude - settings.defaultSouth;
             
-            double xDouble = normalizedLon / settings.lonStep;
-            double yDouble = normalizedLat / settings.latStep;
+            double xDouble = normalizedLon / WeatherSettings.LON_STEP;
+            double yDouble = normalizedLat / WeatherSettings.LAT_STEP;
             
             return new Vector2Int(
                 Mathf.Clamp(Mathf.FloorToInt((float)xDouble), 0, settings.gridWidth - 1),

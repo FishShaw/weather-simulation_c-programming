@@ -50,13 +50,13 @@ namespace WeatherSystem.SingleGrid
             double normalizedLat = lat - settings.defaultSouth;
             
             int gridX = Mathf.Clamp(
-                Mathf.FloorToInt((float)(normalizedLon / settings.lonStep)), 
+                Mathf.FloorToInt((float)(normalizedLon / WeatherSettings.LON_STEP)), 
                 0, 
                 settings.gridWidth - 1
             );
             
             int gridY = Mathf.Clamp(
-                Mathf.FloorToInt((float)(normalizedLat / settings.latStep)), 
+                Mathf.FloorToInt((float)(normalizedLat / WeatherSettings.LAT_STEP)), 
                 0, 
                 settings.gridHeight - 1
             );
