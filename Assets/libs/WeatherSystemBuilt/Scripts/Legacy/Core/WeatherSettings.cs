@@ -8,42 +8,19 @@ namespace WeatherSystem.Core
         [Header("Grid Settings")]
         public int gridWidth = 390;
         public int gridHeight = 390;
-        public float gridResolution = 2.5f; // 2.5km per grid cell
         
         [Header("Geographic Bounds")]
-        // bounds of the netherlands, acquired from the KNMI HARMONIE data
         public double defaultNorth = 56.002;  // lat_max
         public double defaultSouth = 49.0;    // lat_min
         public double defaultEast = 11.281;   // lon_max
         public double defaultWest = 0.0;      // lon_min
 
-        // 动态计算网格步长
-        private float _latStep;
-        private float _lonStep;
-        
-        public float latStep 
-        { 
-            get 
-            {
-                if (_latStep == 0)
-                {
-                    _latStep = (float)((defaultNorth - defaultSouth) / (gridHeight - 1));
-                }
-                return _latStep;
-            }
-        }
-        
-        public float lonStep
-        {
-            get 
-            {
-                if (_lonStep == 0)
-                {
-                    _lonStep = (float)((defaultEast - defaultWest) / (gridWidth - 1));
-                }
-                return _lonStep;
-            }
-        }
+        // 使用常量定义固定步长
+        public const float LAT_STEP = 0.018f; // (56.002 - 49.0) / (390 - 1)
+        public const float LON_STEP = 0.029f; // (11.281 - 0.0) / (390 - 1)
+
+        // 实际物理距离（仅用于参考）
+        public const float GRID_SIZE_KM = 2.0f; // 约2km
 
         [Header("Data Settings")]
         public string dataPath = "WeatherData";
