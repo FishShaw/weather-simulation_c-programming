@@ -33,5 +33,11 @@ namespace WeatherSystem.SingleGrid
 
         public DateTime GetCurrentTime() => currentTime;
         public bool IsPlaying => isPlaying;
+        
+        // 添加此方法用于计算小时内的插值因子 (0-1)
+        public float GetHourInterpolationFactor()
+        {
+            return (currentTime.Minute * 60 + currentTime.Second) / 3600f;
+        }
     }
 } 

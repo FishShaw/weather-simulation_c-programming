@@ -1,95 +1,81 @@
 using UnityEngine;
 using System;
-using WeatherSystem.TimeManagement;
-using WeatherSystem.Core;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace WeatherSystem.SingleGrid
 {
     public class SingleGridWeatherManager : MonoBehaviour
     {
-        public static SingleGridWeatherManager Instance { get; private set; }
-
-        [Header("Components")]
-        [SerializeField] private WeatherSettings settings;
-        public WeatherSettings Settings => settings;
-        [SerializeField] private TimeController timeController;
         [SerializeField] private Transform targetTransform;
-
-        private SingleWeatherDataLoader dataLoader;
-        private SingleWeatherGridMapper gridMapper;
-        private Vector2Int currentGridPos;
-
-        // 当前气象值
-        private float currentRainfall;
-        private Vector2 currentWind;
+        [SerializeField] private SingleSimpleTimeController timeController;
+        [SerializeField] private SingleWeatherVFXController vfxController;
+        [SerializeField] private SingleWeatherGridMapper gridMapper;
         
-        // 提供给其他组件访问当前气象值的属性
-        public float CurrentRainfall => currentRainfall;
-        public Vector2 CurrentWind => currentWind;
-        public Vector2Int CurrentGridPosition => currentGridPos;
+        private SinglePythonWeatherPipe weatherPipe;
+        private Dictionary<int, SingleWeatherData> currentWeatherData;
+        private Vector3 lastCheckedPosition;
+        private float updateInterval = 1f;
+        private float timer;
+        private float positionThreshold = 10f; // 10米的位置更新阈值
 
-        private void Awake()
+        private async void Start()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
-        }
-
-        private void Start()
-        {
-            if (targetTransform == null)
-                targetTransform = Camera.main.transform;
-
-            if (timeController == null)
-                timeController = FindFirstObjectByType<TimeController>();
-
-            gridMapper = FindFirstObjectByType<SingleWeatherGridMapper>();
-            dataLoader = FindFirstObjectByType<SingleWeatherDataLoader>();
-
-            gridMapper?.Initialize();
+            weatherPipe = gameObject.AddComponent<SinglePythonWeatherPipe>();
+            gridMapper.Initialize();
+            timer = updateInterval;
             
-            // 初始化当前网格位置
-            currentGridPos = gridMapper.WorldToGrid(targetTransform.position);
-            dataLoader?.Initialize();
+            // 初始化时立即获取一次天气数据
+            await UpdateWeatherData();
         }
 
-        private void Update()
+        private async void Update()
         {
-            if (!gridMapper.IsPositionInBounds(targetTransform.position))
+            timer -= Time.deltaTime;
+            if (timer <= 0)
             {
-                Debug.LogWarning("Position out of weather data bounds!");
-                return;
+                timer = updateInterval;
+                
+                // 检查位置是否有显著变化
+                if (Vector3.Distance(targetTransform.position, lastCheckedPosition) > positionThreshold)
+                {
+                    await UpdateWeatherData();
+                }
+                
+                if (currentWeatherData != null)
+                {
+                    UpdateWeatherEffects();
+                }
             }
-            
-            Vector2Int newGridPos = gridMapper.WorldToGrid(targetTransform.position);
-            if (newGridPos != currentGridPos)
-            {
-                currentGridPos = newGridPos;
-                dataLoader.UpdateGridPosition(currentGridPos);
-            }
-            
-            UpdateWeatherValues();
         }
 
-        private void UpdateWeatherValues()
+        private async Task UpdateWeatherData()
         {
-            var weatherData = dataLoader.GetCurrentWeatherData();
-            if (weatherData != null)
-            {
-                currentRainfall = weatherData.GetRainfallValue(currentGridPos);
-                currentWind = weatherData.GetWindValue(currentGridPos);
-                OnWeatherValuesUpdated?.Invoke(currentRainfall, currentWind);
-            }
+            lastCheckedPosition = targetTransform.position;
+            currentWeatherData = await weatherPipe.RequestWeatherData(lastCheckedPosition);
         }
 
-        // 天气值更新事件
-        public delegate void WeatherValuesUpdatedHandler(float rainfall, Vector2 wind);
-        public event WeatherValuesUpdatedHandler OnWeatherValuesUpdated;
+        private void UpdateWeatherEffects()
+        {
+            if (timeController == null) return;
+
+            DateTime currentTime = timeController.GetCurrentTime();
+            int currentHour = currentTime.Hour;
+            float interpolationFactor = timeController.GetHourInterpolationFactor();
+
+            if (currentWeatherData.TryGetValue(currentHour, out SingleWeatherData currentHourData) &&
+                currentWeatherData.TryGetValue((currentHour + 1) % 24, out SingleWeatherData nextHourData))
+            {
+                // 在两个小时之间进行插值
+                float rainfall = Mathf.Lerp(currentHourData.Rain, nextHourData.Rain, interpolationFactor);
+                Vector2 wind = Vector2.Lerp(
+                    new Vector2(currentHourData.WindU, currentHourData.WindV),
+                    new Vector2(nextHourData.WindU, nextHourData.WindV),
+                    interpolationFactor
+                );
+
+                vfxController.UpdateWeatherEffects(rainfall, wind);
+            }
+        }
     }
 }

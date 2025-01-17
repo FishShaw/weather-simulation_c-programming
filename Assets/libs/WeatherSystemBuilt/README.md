@@ -6,43 +6,31 @@ A real-time weather system based on geographic information, supporting 15-hour w
 
 WeatherSystemBuilt/
 ├── Scripts/
-│   ├── Core/                 # Core system components
-│   │   ├── WeatherManager.cs
-│   │   └── WeatherSettings.cs
-│   ├── DataHandling/         # Data processing related
-│   │   ├── WeatherData.cs
-│   │   └── WeatherDataLoader.cs
-│   ├── Mapping/             # Geographic mapping related
-│   │   ├── WeatherGridMapper.cs
-│   │   └── TerrainTileMapper.cs
-│   ├── TimeManagement/      # Time sequence management
-│   │   ├── TimeController.cs
-│   │   └── TimelineUI.cs
-│   └── VFX/                 # Visual effects related
-│       ├── └── WeatherVFXController.cs
-├── Shaders/                 # Custom shader files
-├── Materials/               # Material files
-├── Prefabs/                 # Prefab assets
-└── Resources/               # Resource files
+│   ├── New_onegrid/
+│   │   ├── SingleWeatherGridMapper.cs    # Coordinate conversion
+│   │   ├── SingleGridWeatherManager.cs    # System management
+│   │   ├── SingleWeatherVFXController.cs  # Visual effects
+│   │   ├── PythonWeatherPipe.cs          # Python communication
+│   │   └── WeatherHourData.cs            # Data structures
+│   └── ...
 
-## Development Plan
+## Core Components
 
-### 1. Geographic Mapping System
-- TerrainTile system integration
-- 390×390 weather grid mapping
-- UV coordinate system alignment
+### 1. SingleWeatherGridMapper
+- **Purpose**: Handles coordinate system conversions
+- **Features**:
+  - World → RD coordinate conversion
+  - RD → WGS84 (Geographic) conversion
 
-### 2. Time Sequence Control
-- 15-hour data playback system
-- Data interpolation for smooth transitions
-- Timeline UI control system
+### 2. SingleGridWeatherManager
+- **Purpose**: Manages weather system and updates
+- **Features**:
+  - Position-based weather updates
+  - Time-based interpolation
+  - VFX control
 
-### 3. Particle System
-- rain.vfx integration
-- Wind data-driven particle movement
-- Performance optimization
-
-### 4. Data Management
-- PNG data preloading and caching
-- Real-time data updates
-- Grid interpolation processing
+### 3. PythonWeatherPipe
+- **Purpose**: Communicates with Python backend
+- **Features**:
+  - Real-time weather data requests
+  - 15-hour forecast data handling
