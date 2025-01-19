@@ -3,7 +3,7 @@ using UnityEngine.VFX;
 
 namespace WeatherSystem.SingleGrid
 {
-    public class SingleWeatherVFXController : MonoBehaviour
+    public class WeatherVFXController_new : MonoBehaviour
     {
         [SerializeField] private VisualEffect rainVFX;
         [SerializeField] private VisualEffect windVFX;

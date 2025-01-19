@@ -5,15 +5,15 @@ using System.Threading.Tasks;
 
 namespace WeatherSystem.SingleGrid
 {
-    public class SingleGridWeatherManager : MonoBehaviour
+    public class WeatherManager_new : MonoBehaviour
     {
         [SerializeField] private Transform targetTransform;
-        [SerializeField] private SingleSimpleTimeController timeController;
-        [SerializeField] private SingleWeatherVFXController vfxController;
-        [SerializeField] private SingleWeatherGridMapper gridMapper;
+        [SerializeField] private SimpleTimeController timeController;
+        [SerializeField] private WeatherCoordinates gridMapper;
+        [SerializeField] private WeatherVFXController_new vfxController;
         
-        private SinglePythonWeatherPipe weatherPipe;
-        private Dictionary<int, SingleWeatherData> currentWeatherData;
+        private PythonWeatherPipe weatherPipe;
+        private Dictionary<int, WeatherData_new> currentWeatherData;
         private Vector3 lastCheckedPosition;
         private float updateInterval = 1f;
         private float timer;
@@ -21,7 +21,7 @@ namespace WeatherSystem.SingleGrid
 
         private async void Start()
         {
-            weatherPipe = gameObject.AddComponent<SinglePythonWeatherPipe>();
+            weatherPipe = gameObject.AddComponent<PythonWeatherPipe>();
             gridMapper.Initialize();
             timer = updateInterval;
             
@@ -63,8 +63,8 @@ namespace WeatherSystem.SingleGrid
             int currentHour = currentTime.Hour;
             float interpolationFactor = timeController.GetHourInterpolationFactor();
 
-            if (currentWeatherData.TryGetValue(currentHour, out SingleWeatherData currentHourData) &&
-                currentWeatherData.TryGetValue((currentHour + 1) % 24, out SingleWeatherData nextHourData))
+            if (currentWeatherData.TryGetValue(currentHour, out WeatherData_new currentHourData) &&
+                currentWeatherData.TryGetValue((currentHour + 1) % 24, out WeatherData_new nextHourData))
             {
                 // 在两个小时之间进行插值
                 float rainfall = Mathf.Lerp(currentHourData.Rain, nextHourData.Rain, interpolationFactor);

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.IO.Pipes;
 using System.Text;
+using WeatherSystem.SingleGrid;
 
 namespace WeatherSystem.SingleGrid
 {
@@ -61,16 +62,31 @@ namespace WeatherSystem.SingleGrid
         }
     }
 
-    public class SinglePythonWeatherPipe : MonoBehaviour
+    public class PythonWeatherPipe : MonoBehaviour
     {
+        private static PythonWeatherPipe instance;
         private Pipe pipe;
         private bool isConnected;
         private const string PIPE_NAME = "KNMI_Interop_";
+        private bool isConnecting = false;
+
+        private void Awake()
+        {
+            if (instance != null && instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            instance = this;
+        }
 
         private async Task<bool> TryConnect()
         {
+            if (isConnecting) return false;
+            
             try
             {
+                isConnecting = true;
                 pipe = new Pipe(PIPE_NAME, false);
                 isConnected = true;
                 return true;
@@ -78,20 +94,28 @@ namespace WeatherSystem.SingleGrid
             catch (Exception e)
             {
                 Debug.LogWarning($"Failed to connect to Python server: {e.Message}");
-                await Task.Delay(1000); // 等待1秒后重试
+                await Task.Delay(1000);
                 return false;
             }
-        }
-
-        private async void Awake()
-        {
-            while (!await TryConnect())
+            finally
             {
-                await Task.Delay(1000);
+                isConnecting = false;
             }
         }
 
-        public async Task<Dictionary<int, SingleWeatherData>> RequestWeatherData(Vector3 worldPosition)
+        private async void Start()
+        {
+            await Task.Delay(100);
+            if (!isConnected)
+            {
+                while (!await TryConnect())
+                {
+                    await Task.Delay(1000);
+                }
+            }
+        }
+
+        public async Task<Dictionary<int, WeatherData_new>> RequestWeatherData(Vector3 worldPosition)
         {
             if (!isConnected)
             {
@@ -104,7 +128,7 @@ namespace WeatherSystem.SingleGrid
 
             try
             {
-                var gridMapper = GetComponent<SingleWeatherGridMapper>();
+                var gridMapper = GetComponent<WeatherCoordinates>();
                 var (lat, lon) = gridMapper.WorldToGeographic(worldPosition);
                 
                 await Task.Run(() =>
@@ -131,20 +155,18 @@ namespace WeatherSystem.SingleGrid
             }
             catch (Exception e)
             {
-                Debug.LogError($"Weather pipe error: {e.Message}\nStack trace: {e.StackTrace}");
-                isConnected = false;
+                Debug.LogError($"Failed to request weather data: {e.Message}");
                 return null;
             }
         }
 
-        private Dictionary<int, SingleWeatherData> ParseWeatherData(string msg)
+        private Dictionary<int, WeatherData_new> ParseWeatherData(string msg)
         {
-            var result = new Dictionary<int, SingleWeatherData>();
+            var result = new Dictionary<int, WeatherData_new>();
             
             try
             {
                 string[] entries = msg.Split('#');
-                
                 foreach (string entry in entries)
                 {
                     if (string.IsNullOrEmpty(entry)) continue;
@@ -155,18 +177,20 @@ namespace WeatherSystem.SingleGrid
                     if (!int.TryParse(parts[0], out int hour)) continue;
                     
                     string[] values = parts[1].Split(',');
-                    if (values.Length != 4) continue;
+                    if (values.Length != 5) continue;  // 现在是5个值
 
                     if (float.TryParse(values[0], out float windU) &&
                         float.TryParse(values[1], out float windV) &&
                         float.TryParse(values[2], out float windSpeed) &&
-                        float.TryParse(values[3], out float rain))
+                        float.TryParse(values[3], out float windDirection) &&
+                        float.TryParse(values[4], out float rain))
                     {
-                        result[hour] = new SingleWeatherData
+                        result[hour] = new WeatherData_new
                         {
                             WindU = windU,
                             WindV = windV,
                             WindSpeed = windSpeed,
+                            WindDirection = windDirection,
                             Rain = rain
                         };
                     }
@@ -176,7 +200,7 @@ namespace WeatherSystem.SingleGrid
             catch (Exception e)
             {
                 Debug.LogError($"Failed to parse weather data: {e.Message}");
-                return new Dictionary<int, SingleWeatherData>();
+                return new Dictionary<int, WeatherData_new>();
             }
         }
 

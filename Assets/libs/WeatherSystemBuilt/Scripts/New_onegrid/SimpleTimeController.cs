@@ -3,7 +3,7 @@ using System;
 
 namespace WeatherSystem.SingleGrid
 {
-    public class SingleSimpleTimeController : MonoBehaviour
+    public class SimpleTimeController : MonoBehaviour
     {
         [SerializeField] private DateTime startTime = new DateTime(2024, 7, 9, 12, 0, 0);
         private DateTime endTime = new DateTime(2024, 7, 10, 3, 0, 0);
