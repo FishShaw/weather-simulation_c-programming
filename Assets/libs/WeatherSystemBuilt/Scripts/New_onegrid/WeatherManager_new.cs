@@ -7,75 +7,138 @@ namespace WeatherSystem.SingleGrid
 {
     public class WeatherManager_new : MonoBehaviour
     {
-        [SerializeField] private Transform targetTransform;
+        [Header("Components")]
         [SerializeField] private SimpleTimeController timeController;
         [SerializeField] private WeatherCoordinates gridMapper;
         [SerializeField] private WeatherVFXController_new vfxController;
-        
-        private PythonWeatherPipe weatherPipe;
-        private Dictionary<int, WeatherData_new> currentWeatherData;
-        private Vector3 lastCheckedPosition;
-        private float updateInterval = 1f;
-        private float timer;
-        private float positionThreshold = 10f; // 10米的位置更新阈值
 
-        private async void Start()
+        [Header("Textures")]
+        [SerializeField] private int textureSize = 64;
+        private Texture2D[] windTextures;    // RGBA: U,V,Speed,Direction
+        private Texture2D[] rainTextures;     // R: Rainfall
+
+        private PythonWeatherPipe weatherPipe;
+        private Dictionary<int, WeatherData_new> weatherData;
+        private bool isInitialized = false;
+
+        private void Start()
         {
-            weatherPipe = gameObject.AddComponent<PythonWeatherPipe>();
-            gridMapper.Initialize();
-            timer = updateInterval;
-            
-            // 初始化时立即获取一次天气数据
-            await UpdateWeatherData();
+            Initialize();
         }
 
-        private async void Update()
+        private async void Initialize()
         {
-            timer -= Time.deltaTime;
-            if (timer <= 0)
+            // 初始化组件
+            weatherPipe = gameObject.AddComponent<PythonWeatherPipe>();
+            gridMapper.Initialize();
+
+            // 创建贴图数组
+            windTextures = new Texture2D[16];
+            rainTextures = new Texture2D[16];
+            for (int i = 0; i < 16; i++)
             {
-                timer = updateInterval;
-                
-                // 检查位置是否有显著变化
-                if (Vector3.Distance(targetTransform.position, lastCheckedPosition) > positionThreshold)
+                windTextures[i] = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false);
+                rainTextures[i] = new Texture2D(textureSize, textureSize, TextureFormat.R8, false);
+            }
+
+            // 获取初始天气数据
+            await RequestWeatherData();
+            
+            isInitialized = true;
+        }
+
+        private void Update()
+        {
+            if (!isInitialized || timeController == null) return;
+
+            UpdateWeatherEffects();
+        }
+
+        private async Task RequestWeatherData()
+        {
+            // 获取64x64网格的坐标
+            List<Vector2> coordinates = gridMapper.Generate64x64Grid();
+            weatherData = await weatherPipe.RequestWeatherData(Vector3.zero);
+            
+            if (weatherData != null)
+            {
+                GenerateWeatherTextures();
+                Debug.Log("Weather data updated successfully");
+            }
+            else
+            {
+                Debug.LogError("Failed to update weather data");
+            }
+        }
+
+        private void GenerateWeatherTextures()
+        {
+            for (int hour = 0; hour < 16; hour++)
+            {
+                if (weatherData.TryGetValue(hour, out WeatherData_new data))
                 {
-                    await UpdateWeatherData();
-                }
-                
-                if (currentWeatherData != null)
-                {
-                    UpdateWeatherEffects();
+                    // 更新风贴图
+                    Color[] windPixels = new Color[textureSize * textureSize];
+                    for (int y = 0; y < textureSize; y++)
+                    for (int x = 0; x < textureSize; x++)
+                    {
+                        int i = y * textureSize + x;
+                        windPixels[i] = new Color(
+                            data.WindU[x, y],           // R: U分量
+                            data.WindV[x, y],           // G: V分量
+                            data.WindSpeed[x, y],       // B: 风速
+                            data.WindDirection[x, y]    // A: 风向
+                        );
+                    }
+                    windTextures[hour].SetPixels(windPixels);
+                    windTextures[hour].Apply();
+
+                    // 更新雨贴图
+                    Color[] rainPixels = new Color[textureSize * textureSize];
+                    for (int y = 0; y < textureSize; y++)
+                    for (int x = 0; x < textureSize; x++)
+                    {
+                        int i = y * textureSize + x;
+                        rainPixels[i] = new Color(data.Rain[x, y], 0, 0, 1);
+                    }
+                    rainTextures[hour].SetPixels(rainPixels);
+                    rainTextures[hour].Apply();
                 }
             }
         }
 
-        private async Task UpdateWeatherData()
-        {
-            lastCheckedPosition = targetTransform.position;
-            currentWeatherData = await weatherPipe.RequestWeatherData(lastCheckedPosition);
-        }
-
         private void UpdateWeatherEffects()
         {
-            if (timeController == null) return;
-
             DateTime currentTime = timeController.GetCurrentTime();
             int currentHour = currentTime.Hour;
             float interpolationFactor = timeController.GetHourInterpolationFactor();
+            Vector2Int gridPos = new Vector2Int(0, 0);  // 或者根据需要计算具体的网格位置
 
-            if (currentWeatherData.TryGetValue(currentHour, out WeatherData_new currentHourData) &&
-                currentWeatherData.TryGetValue((currentHour + 1) % 24, out WeatherData_new nextHourData))
+            if (weatherData.TryGetValue(currentHour, out WeatherData_new currentHourData) &&
+                weatherData.TryGetValue((currentHour + 1) % 24, out WeatherData_new nextHourData))
             {
-                // 在两个小时之间进行插值
-                float rainfall = Mathf.Lerp(currentHourData.Rain, nextHourData.Rain, interpolationFactor);
+                float rainfall = Mathf.Lerp(
+                    currentHourData.Rain[gridPos.x, gridPos.y], 
+                    nextHourData.Rain[gridPos.x, gridPos.y], 
+                    interpolationFactor
+                );
                 Vector2 wind = Vector2.Lerp(
-                    new Vector2(currentHourData.WindU, currentHourData.WindV),
-                    new Vector2(nextHourData.WindU, nextHourData.WindV),
+                    currentHourData.GetWindVector(gridPos),
+                    nextHourData.GetWindVector(gridPos),
                     interpolationFactor
                 );
 
                 vfxController.UpdateWeatherEffects(rainfall, wind);
             }
+        }
+
+        // 获取当前时刻的贴图
+        public (Texture2D wind, Texture2D rain) GetCurrentTextures()
+        {
+            if (!isInitialized) return (null, null);
+            
+            int currentHour = timeController.GetCurrentTime().Hour;
+            return (windTextures[currentHour], rainTextures[currentHour]);
         }
     }
 }

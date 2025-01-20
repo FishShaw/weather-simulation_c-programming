@@ -1,28 +1,29 @@
 using UnityEngine;
 using Wander;
+using System.Collections.Generic;
 
 namespace WeatherSystem.SingleGrid
 {
     public class WeatherCoordinates : MonoBehaviour
     {
+        [SerializeField] private WeatherSettings_new settings;
         private TerrainBuilder terrainBuilder;
         private bool isInitialized = false;
         
-        // 添加公共属性
         public bool IsInitialized => isInitialized;
 
         public void Initialize()
         {
             if (terrainBuilder == null)
             {
-                // 首先尝试查找TerrainGenerator_11
+                // find the terrain generator
                 GameObject generator = GameObject.Find("TerrainGenerator_11");
                 if (generator != null)
                 {
                     terrainBuilder = generator.GetComponent<TerrainBuilder>();
                 }
                 
-                // 如果找不到特定名称的对象，尝试查找任何TerrainBuilder
+                // if not found, try to find any terrain builder
                 if (terrainBuilder == null)
                 {
                     terrainBuilder = FindFirstObjectByType<TerrainBuilder>();
@@ -30,38 +31,75 @@ namespace WeatherSystem.SingleGrid
                 
                 isInitialized = terrainBuilder != null;
                 
-                if (isInitialized)
-                {
-                    Debug.Log($"Found TerrainBuilder with RD origin: ({terrainBuilder.originRDX}, {terrainBuilder.originRDY})");
-                }
-                else
+                if (!isInitialized)
                 {
                     Debug.LogError("No TerrainBuilder found in scene!");
                 }
             }
+
+            if (settings == null)
+            {
+                settings = FindFirstObjectByType<WeatherSettings_new>();
+            }
         }
 
-        // 世界坐标转地理坐标
+        public List<Vector2> Generate64x64Grid()
+        {
+            List<Vector2> coordinates = new List<Vector2>();
+            
+            if (terrainBuilder == null)
+            {
+                Debug.LogError("TerrainBuilder not found!");
+                return coordinates;
+            }
+
+            // calculate the RD grid step (meter)
+            double rdStepX = terrainBuilder.boundsSize / 63.0;
+            double rdStepY = terrainBuilder.boundsSize / 63.0;
+
+            // calculate the start RD coordinate (bottom left corner)
+            double startRDX = terrainBuilder.originRDX - (terrainBuilder.boundsSize / 2.0);
+            double startRDY = terrainBuilder.originRDY - (terrainBuilder.boundsSize / 2.0);
+            
+            // generate the grid points in the RD coordinate system, then convert to geographic coordinates
+            for (int y = 0; y < 64; y++)
+            {
+                for (int x = 0; x < 64; x++)
+                {
+                    // calculate the RD coordinate of the grid center
+                    double rdX = startRDX + (x * rdStepX) + (rdStepX / 2.0);
+                    double rdY = startRDY + (y * rdStepY) + (rdStepY / 2.0);
+                    
+                    // directly convert the RD coordinate to latitude and longitude
+                    RDUtils.RD2GPS(rdX, rdY, out double lat, out double lon);
+                    coordinates.Add(new Vector2((float)lat, (float)lon));
+                }
+            }
+
+            return coordinates;
+        }
+
+        // 
         public (double lat, double lon) WorldToGeographic(Vector3 worldPosition)
         {
             if (!isInitialized) return (0, 0);
             
-            // 世界坐标转RD坐标
+            // world coordinate to RD coordinate
             double rdX = terrainBuilder.originRDX + worldPosition.x;
             double rdY = terrainBuilder.originRDY + worldPosition.z;
             
-            // RD坐标转地理坐标
+            // RD coordinate to geographic coordinate
             RDUtils.RD2GPS(rdX, rdY, out double lat, out double lon);
             return (lat, lon);
         }
 
-        // 地理坐标转世界坐标
+        // geographic coordinate to world coordinate
         public Vector3 GeographicToWorld(double lat, double lon)
         {
-            // 地理坐标转RD坐标
+            // geographic coordinate to RD coordinate
             RDUtils.GPS2RD(lat, lon, out double rdX, out double rdY);
             
-            // RD坐标转世界坐标
+            // RD coordinate to world coordinate
             return new Vector3(
                 (float)(rdX - terrainBuilder.originRDX),
                 0,
@@ -69,7 +107,7 @@ namespace WeatherSystem.SingleGrid
             );
         }
 
-        // RD坐标转世界坐标
+        // RD coordinate to world coordinate
         public Vector3 RDToWorld(double rdX, double rdY)
         {
             return new Vector3(
