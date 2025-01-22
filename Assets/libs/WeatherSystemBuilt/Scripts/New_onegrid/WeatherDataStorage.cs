@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 public class WeatherDataStorage : MonoBehaviour
 {
     // 使用相对于Assets文件夹的路径
-    private const string WEATHER_DATA_PATH = "libs/WeatherSystemBuilt/Resources/WeatherData_json/weather_data_{0}.json";
+    private const string WEATHER_DATA_PATH = "Assets/libs/WeatherSystemBuilt/Resources/WeatherData_json/weather_data_{0}.json";
     private const int MAX_BACKUPS = 5; // 保留最近5个备份
     
     [System.Serializable]
@@ -193,7 +193,8 @@ public class WeatherDataStorage : MonoBehaviour
     {
         try
         {
-            string fullPath = GetFullPath("latest");
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string fullPath = string.Format(WEATHER_DATA_PATH, timestamp);
             string directoryPath = Path.GetDirectoryName(fullPath);
             
             if (!Directory.Exists(directoryPath))
@@ -201,7 +202,7 @@ public class WeatherDataStorage : MonoBehaviour
 
             var cache = new WeatherDataCache
             {
-                timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss"),
+                timestamp = timestamp,
                 coordinates = coordinates,
                 weatherData = weatherData
             };
@@ -214,11 +215,11 @@ public class WeatherDataStorage : MonoBehaviour
 
             string json = JsonConvert.SerializeObject(cache, settings);
             File.WriteAllText(fullPath, json);
-            Debug.Log($"Weather data cached to: {fullPath}");
+            Debug.Log($"Weather data saved to: {fullPath}");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"Failed to save cache: {e.Message}\n{e.StackTrace}");
+            Debug.LogError($"Failed to save weather data: {e.Message}\n{e.StackTrace}");
         }
     }
 
