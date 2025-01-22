@@ -46,39 +46,22 @@ public class WeatherStatistics
 
 public class WeatherSystemTester : MonoBehaviour
 {
-    private WeatherCoordinates gridMapper;
-    private PythonWeatherPipe weatherPipe;
-    private Dictionary<int, WeatherData_new> weatherData;
-
     private async void Start()
     {
-        gridMapper = gameObject.AddComponent<WeatherCoordinates>();
-        weatherPipe = gameObject.AddComponent<PythonWeatherPipe>();
-        
-        gridMapper.Initialize();
-        await Task.Delay(500); // 给予足够的时间让 PythonWeatherPipe 完成连接
         await TestWeatherData();
     }
 
     private async Task TestWeatherData()
     {
-        // 1. 获取地形网格坐标
-        List<Vector2> coordinates = gridMapper.Generate64x64Grid();
+        // 确保数据已加载
+        if (!WeatherDataStorage.Instance.IsDataLoaded)
+        {
+            await WeatherDataStorage.Instance.LoadWeatherData();
+        }
+
+        var weatherData = WeatherDataStorage.Instance.WeatherData;
+        var coordinates = WeatherDataStorage.Instance.Coordinates;
         
-        // 打印地形范围信息
-        var terrainBuilder = FindFirstObjectByType<TerrainBuilder>();
-        Debug.Log($"Terrain Bounds: Origin({terrainBuilder.originRDX}, {terrainBuilder.originRDY}), " +
-                 $"Size({terrainBuilder.boundsSize})");
-        
-        // 打印网格信息
-        Debug.Log($"Generated {coordinates.Count} grid coordinates");
-        Debug.Log($"First coordinate: ({coordinates[0].x:F4}°N, {coordinates[0].y:F4}°E)");
-        Debug.Log($"Last coordinate: ({coordinates[4095].x:F4}°N, {coordinates[4095].y:F4}°E)");
-        
-        // 2. 获取天气数据
-        weatherData = await weatherPipe.RequestWeatherData(Vector3.zero);
-        
-        // 3. 打印结果
         if (weatherData != null)
         {
             Debug.Log("=== Weather Forecast ===");
@@ -93,9 +76,8 @@ public class WeatherSystemTester : MonoBehaviour
                 {
                     Debug.Log($"\nTime: {hour:D2}:00");
                     
-                    // 添加统计分析
-                    WeatherStatistics stats = new WeatherStatistics();
-                    stats.AnalyzeRainfall(data, coordinates);
+                    // 获取统计信息
+                    var stats = WeatherDataStorage.Instance.GetWeatherStatistics(hour);
                     
                     Debug.Log($"Rainfall Statistics:");
                     Debug.Log($"  Average: {stats.AverageRainfall:F2} mm/h");
@@ -122,10 +104,6 @@ public class WeatherSystemTester : MonoBehaviour
                     Debug.Log("-------------------");
                 }
             }
-        }
-        else
-        {
-            Debug.LogError("Failed to get weather data");
         }
     }
 }
