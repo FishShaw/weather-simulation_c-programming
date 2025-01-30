@@ -5,39 +5,33 @@ namespace WeatherSystem.SingleGrid
 {
     public class WeatherVFXController_new : MonoBehaviour
     {
-        [SerializeField] private VisualEffect rainVFX;
-        [SerializeField] private VisualEffect windVFX;
-        [SerializeField] private float transitionSpeed = 2f;
-        
-        private float currentRainfall;
-        private Vector2 currentWind;
+        public VisualEffect vfx;
+        public Texture2D[] weatherMaps;
+        float timer = 0f;
+        int current = 0;
+        public float interval = 2f; // 2s each frame
 
-        public void UpdateWeatherEffects(float rainfall, Vector2 wind)
+        void Start()
         {
-            // 平滑过渡到新的天气状态
-            currentRainfall = Mathf.Lerp(currentRainfall, rainfall, Time.deltaTime * transitionSpeed);
-            currentWind = Vector2.Lerp(currentWind, wind, Time.deltaTime * transitionSpeed);
-
-            UpdateRainEffect(currentRainfall);
-            UpdateWindEffect(currentWind);
+            if (vfx && weatherMaps.Length > 1)
+            {
+                vfx.SetTexture("_WeatherA", weatherMaps[0]);
+                vfx.SetTexture("_WeatherB", weatherMaps[1]);
+            }
         }
 
-        private void UpdateRainEffect(float rainfall)
+        void Update()
         {
-            if (rainVFX == null) return;
-            rainVFX.SetFloat("RainIntensity", rainfall);
-        }
-
-        private void UpdateWindEffect(Vector2 wind)
-        {
-            if (windVFX == null) return;
-            
-            Vector3 windDirection = new Vector3(wind.x, 0f, wind.y).normalized;
-            float windSpeed = wind.magnitude;
-            
-            windVFX.SetVector3("WindDirection", windDirection);
-            windVFX.SetFloat("WindSpeed", windSpeed);
-            transform.forward = windDirection;
+            timer += Time.deltaTime;
+            if (timer >= interval)
+            {
+                timer = 0f;
+                current++;
+                if (current >= weatherMaps.Length) current = 0;
+                int next = (current + 1) % weatherMaps.Length;
+                vfx.SetTexture("_WeatherA", weatherMaps[current]);
+                vfx.SetTexture("_WeatherB", weatherMaps[next]);
+            }
         }
     }
 } 
