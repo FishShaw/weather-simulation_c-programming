@@ -6,6 +6,7 @@ using System.IO.Pipes;
 using System.Text;
 using WeatherSystem.SingleGrid;
 using System.Linq;
+using Wander;
 
 namespace WeatherSystem.SingleGrid
 {
@@ -168,6 +169,11 @@ namespace WeatherSystem.SingleGrid
             try
             {
                 var gridMapper = GetComponent<WeatherCoordinates>();
+                var terrainBuilder = FindFirstObjectByType<TerrainBuilder>();
+                if (terrainBuilder != null)
+                {
+                    gridMapper.Initialize(terrainBuilder.originRDX, terrainBuilder.originRDY);
+                }
                 List<Vector2> coordinates = gridMapper.Generate64x64Grid();
                 
                 //divide the coordinates into chunks

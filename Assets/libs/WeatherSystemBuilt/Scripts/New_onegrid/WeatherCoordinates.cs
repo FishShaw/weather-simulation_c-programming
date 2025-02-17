@@ -9,8 +9,16 @@ namespace WeatherSystem.SingleGrid
         [SerializeField] private WeatherSettings_new settings;
         private TerrainBuilder terrainBuilder;
         private bool isInitialized = false;
+        private float centerRDX;
+        private float centerRDY;
         
         public bool IsInitialized => isInitialized;
+
+        public void Initialize(double rdX, double rdY)
+        {
+            centerRDX = (float)rdX;
+            centerRDY = (float)rdY;
+        }
 
         public void Initialize()
         {

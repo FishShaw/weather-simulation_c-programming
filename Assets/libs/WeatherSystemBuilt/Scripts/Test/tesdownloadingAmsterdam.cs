@@ -15,29 +15,23 @@ public class AmsterdamWeatherTester : MonoBehaviour
 
     private async Task RunTest()
     {
-        // 获取或查找TerrainBuilder
         if (terrainBuilder == null)
             terrainBuilder = FindFirstObjectByType<TerrainBuilder>();
             
         if (terrainBuilder != null)
         {
-            // 设置阿姆斯特丹的RD坐标
-            terrainBuilder.originRDX = 121686f;
-            terrainBuilder.originRDY = 487478f;
-            
-            Debug.Log($"=== Testing Amsterdam Weather Data ===");
+            // 不再硬编码坐标，而是使用TerrainBuilder当前的坐标
+            Debug.Log($"=== Testing Weather Data ===");
             Debug.Log($"Center Position: RD({terrainBuilder.originRDX}, {terrainBuilder.originRDY})");
             
             // 刷新天气数据并等待完成
             await WeatherDataStorage.Instance.RefreshData();
             
-            // 确保数据已加载
             if (!WeatherDataStorage.Instance.IsDataLoaded)
             {
                 await WeatherDataStorage.Instance.LoadWeatherData();
             }
             
-            // 测试数据
             TestWeatherData();
         }
     }
@@ -49,6 +43,15 @@ public class AmsterdamWeatherTester : MonoBehaviour
         
         if (weatherData != null)
         {
+            // 获取中心点坐标并显示
+            var weatherCoords = FindFirstObjectByType<WeatherCoordinates>();
+            // 使用RDUtils.RD2GPS进行坐标转换
+            RDUtils.RD2GPS(terrainBuilder.originRDX, terrainBuilder.originRDY, out double lat, out double lon);
+            
+            Debug.Log($"\n=== Center Point Coordinates ===");
+            Debug.Log($"RD Coordinates: ({terrainBuilder.originRDX:F2}, {terrainBuilder.originRDY:F2})");
+            Debug.Log($"LatLon Coordinates: ({lat:F6}°N, {lon:F6}°E)");
+            
             // 参考WeatherSystemTester的测试点
             int[] testPoints = new[] { 0, 63, 4032, 4095 };
             string[] cornerNames = new[] { "Southwest", "Southeast", "Northwest", "Northeast" };
