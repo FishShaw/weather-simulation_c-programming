@@ -107,6 +107,7 @@ namespace WeatherSystem.SingleGrid
             }
 
             // 读取中心点的颜色值
+            // Color centerPixel = currentTexture.GetPixel(0, 0);
             Color centerPixel = currentTexture.GetPixel(32, 32);
 
             // 反归一化
@@ -130,7 +131,9 @@ namespace WeatherSystem.SingleGrid
 
         public void TogglePlay()
         {
-            isPlaying = !isPlaying;
+            
+            isPlaying = true;
+            // isPlaying = !isPlaying;
             playSpeed = NORMAL_SPEED;
         }
 
