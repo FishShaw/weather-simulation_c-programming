@@ -8,7 +8,7 @@ public class WorldCoordinates : MonoBehaviour
 {
     private TerrainBuilder terrainBuilder;
     private WeatherCoordinates weatherCoordinates;
-    private const string SAVE_DIR = "Assets/libs/WeatherSystemBuilt/Resources/WeatherData_json_textures/weather_data_20250127_125930";
+    private const string SAVE_DIR = "Assets/libs/WeatherSystemBuilt/Resources/WeatherData_json_textures/weather_data_Tilburg_10km_new";
 
     [System.Serializable]
     private class Vector3Data

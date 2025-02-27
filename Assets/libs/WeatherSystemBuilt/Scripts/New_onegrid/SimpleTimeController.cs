@@ -27,6 +27,16 @@ namespace WeatherSystem.SingleGrid
         private int currentX = 32; // default x position
         private int currentY = 32; // default y position
 
+        [Header("Camera Control")]
+        [SerializeField] private float mouseSensitivity = 2.0f;
+        [SerializeField] private float cameraHeight = 500f;
+        [SerializeField] private float cameraDistance = 50f;
+        [SerializeField] private bool invertYAxis = false;
+        
+        private float rotationX = 0f;
+        private float rotationY = 0f;
+        private bool isCameraControlEnabled = true;
+
         [Header("Time Control")]
         private bool isPlaying = false;
         private float playSpeed = 1f;
@@ -38,7 +48,10 @@ namespace WeatherSystem.SingleGrid
         private float windU_min, windU_max;
         private float windV_min, windV_max;
         private float rain_min, rain_max;
-        private const string METADATA_PATH = "Assets/libs/WeatherSystemBuilt/Resources/WeatherData_json_textures/weather_data_20250127_125930/metadata.json";
+
+        [Header("Data Paths")]
+        [Tooltip("元数据文件的路径，包含天气数据范围")]
+        [SerializeField] private string metadataPath = "Assets/libs/WeatherSystemBuilt/Resources/WeatherData_json_textures/weather_data_Amsterdam_10km/metadata.json";
 
         private void Start()
         {
@@ -48,13 +61,17 @@ namespace WeatherSystem.SingleGrid
             
             // move camera to initial position
             MoveToPosition(currentX, currentY);
+            
+            // Initial camera rotation
+            rotationX = 0f;
+            rotationY = 20f; // 给摄像机一个初始俯角
         }
 
         private void LoadMetadata()
         {
             try
             {
-                string jsonText = File.ReadAllText(METADATA_PATH);
+                string jsonText = File.ReadAllText(metadataPath);
                 var metadata = JsonConvert.DeserializeObject<WeatherMetadata>(jsonText);
                 
                 windU_min = metadata.windU_min;
@@ -66,7 +83,7 @@ namespace WeatherSystem.SingleGrid
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Error loading metadata: {e.Message}");
+                Debug.LogError($"Error loading metadata from path: {metadataPath}\nError: {e.Message}");
             }
         }
 
@@ -106,12 +123,56 @@ namespace WeatherSystem.SingleGrid
 
         private void Update()
         {
+            // 天气时间流逝控制
             if (isPlaying && vfxController != null && timeSlider != null)
             {
                 float newValue = timeSlider.value + Time.deltaTime * playSpeed;
                 if (newValue >= 15f) newValue = 0f;
                 timeSlider.value = newValue;
             }
+            
+            // 鼠标摄像机控制
+            if (isCameraControlEnabled)
+            {
+                // 按住鼠标右键时才能旋转
+                if (Input.GetMouseButton(1))
+                {
+                    rotationX += Input.GetAxis("Mouse X") * mouseSensitivity;
+                    
+                    float yAxis = Input.GetAxis("Mouse Y") * mouseSensitivity;
+                    if (invertYAxis) yAxis = -yAxis;
+                    rotationY -= yAxis;
+                    
+                    // 限制垂直角度，防止翻转
+                    rotationY = Mathf.Clamp(rotationY, -80f, 80f);
+                }
+                
+                // 更新摄像机位置和旋转
+                UpdateCameraPosition();
+            }
+            
+            // 启用/禁用摄像机控制（可选，按ESC键切换）
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                isCameraControlEnabled = !isCameraControlEnabled;
+            }
+        }
+
+        private void UpdateCameraPosition()
+        {
+            if (mainCamera == null || positionMarker == null) return;
+            
+            // 计算摄像机位置
+            Quaternion rotation = Quaternion.Euler(rotationY, rotationX, 0);
+            Vector3 targetPosition = positionMarker.transform.position;
+            
+            // 根据旋转计算摄像机偏移
+            Vector3 cameraOffset = new Vector3(0, cameraHeight, -cameraDistance);
+            Vector3 cameraPosition = targetPosition + rotation * cameraOffset;
+            
+            // 设置摄像机位置和旋转
+            mainCamera.transform.position = cameraPosition;
+            mainCamera.transform.rotation = rotation;
         }
 
         public void OnSliderValueChanged(float value)
@@ -155,9 +216,7 @@ namespace WeatherSystem.SingleGrid
 
             if (weatherInfoText != null)
             {
-                Vector3 worldPos = CalculateWorldPosition(x, y);
                 weatherInfoText.text = $"Position: ({x},{y})\n" +
-                                     $"World: ({worldPos.x:F1}, {worldPos.z:F1})\n" +
                                      $"Hour: {frameIndex}\n" +
                                      $"Wind: {windMagnitude:F2} m/s ({windU:F2}, {windV:F2})\n" +
                                      $"Rain: {rain:F2} mm/h";
@@ -200,44 +259,22 @@ namespace WeatherSystem.SingleGrid
         
         private void MoveToPosition(int x, int y)
         {
-            if (mainCamera == null) return;
+            if (positionMarker == null) return;
             
-            // calculate the world coordinate position
+            // 计算世界坐标位置
             Vector3 targetPosition = CalculateWorldPosition(x, y);
             
-            // set the camera position (keep the y height unchanged)
-            Vector3 cameraPos = mainCamera.transform.position;
-            mainCamera.transform.position = new Vector3(
-                targetPosition.x, 
-                cameraPos.y, 
-                targetPosition.z
-            );
+            // 将标记移动到目标位置
+            positionMarker.transform.position = targetPosition;
             
-            // keep the camera always facing the terrain center, but keep the horizontal view
-            Vector3 terrainCenter = Vector3.zero; // the terrain center should be close to (0,0,0)
+            // 更新摄像机位置
+            UpdateCameraPosition();
             
-            // calculate the horizontal direction vector (only consider the x and z components)
-            Vector3 lookDirection = terrainCenter - mainCamera.transform.position;
-            lookDirection.y = 0; // force the horizontal direction, eliminate the vertical component
-            
-            if (lookDirection.magnitude > 0.001f) // avoid errors when at the center point
-            {
-                // only rotate the Y axis (horizontal rotation)
-                float targetAngle = Mathf.Atan2(lookDirection.x, lookDirection.z) * Mathf.Rad2Deg;
-                mainCamera.transform.rotation = Quaternion.Euler(0, targetAngle, 0);
-            }
-            
-            // if there is a position marker, move to the corresponding position
-            if (positionMarker != null)
-            {
-                positionMarker.transform.position = targetPosition;
-            }
-            
-            // update the current coordinate value
+            // 更新当前坐标值
             currentX = x;
             currentY = y;
             
-            // update the weather info displayhe weather info display
+            // 更新天气信息显示
             UpdateWeatherDisplay(Mathf.FloorToInt(timeSlider.value));
         }
         
