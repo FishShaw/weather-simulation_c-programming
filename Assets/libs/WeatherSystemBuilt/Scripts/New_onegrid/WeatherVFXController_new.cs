@@ -7,8 +7,8 @@ namespace WeatherSystem.SingleGrid
     {
         public VisualEffect vfx;
         public Texture2D[] weatherMaps;
-        float timer = 0f;
-        int current = 0;
+        // float timer = 0f;
+        // int current = 0;
         public float interval = 2f; // 2s each frame
 
         void Start()
@@ -22,16 +22,16 @@ namespace WeatherSystem.SingleGrid
 
         void Update()
         {
-            timer += Time.deltaTime;
-            if (timer >= interval)
-            {
-                timer = 0f;
-                current++;
-                if (current >= weatherMaps.Length) current = 0;
-                int next = (current + 1) % weatherMaps.Length;
-                vfx.SetTexture("_WeatherA", weatherMaps[current]);
-                vfx.SetTexture("_WeatherB", weatherMaps[next]);
-            }
+            // timer += Time.deltaTime;
+            // if (timer >= interval)
+            // {
+            //     timer = 0f;
+            //     current++;
+            //     if (current >= weatherMaps.Length) current = 0;
+            //     int next = (current + 1) % weatherMaps.Length;
+            //     vfx.SetTexture("_WeatherA", weatherMaps[current]);
+            //     vfx.SetTexture("_WeatherB", weatherMaps[next]);
+            // }
         }
     }
 } 

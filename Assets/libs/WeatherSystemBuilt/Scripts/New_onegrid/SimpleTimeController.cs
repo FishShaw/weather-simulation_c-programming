@@ -40,9 +40,9 @@ namespace WeatherSystem.SingleGrid
         [Header("Time Control")]
         private bool isPlaying = false;
         private float playSpeed = 1f;
-        private const float FRAME_DURATION = 3f; // every frame lasts 3 seconds
-        private const float NORMAL_SPEED = 1f / FRAME_DURATION; // normal speed: 3 seconds per frame
-        private const float FAST_SPEED = 5f / FRAME_DURATION;   // fast speed: 0.6 seconds per frame
+        [SerializeField] [Range(0.5f, 10f)] private float frameDuration = 3f; // 可调整的帧持续时间
+        private const float NORMAL_SPEED = 1f; // 正常速度倍率
+        private const float FAST_SPEED = 5f;   // 快速播放倍率
 
         // weather data range
         private float windU_min, windU_max;
@@ -126,9 +126,26 @@ namespace WeatherSystem.SingleGrid
             // 天气时间流逝控制
             if (isPlaying && vfxController != null && timeSlider != null)
             {
-                float newValue = timeSlider.value + Time.deltaTime * playSpeed;
-                if (newValue >= 15f) newValue = 0f;
-                timeSlider.value = newValue;
+                // 基于frameDuration计算每帧的实际速度
+                float actualSpeed = playSpeed / frameDuration;
+                float newValue = timeSlider.value + Time.deltaTime * actualSpeed;
+                if (newValue >= timeSlider.maxValue) newValue = 0f;
+                
+                // 获取当前帧的整数部分
+                int currentFrame = Mathf.FloorToInt(timeSlider.value);
+                int newFrame = Mathf.FloorToInt(newValue);
+                
+                // 如果进入新的整数帧，更新纹理
+                if (newFrame != currentFrame)
+                {
+                    // 设置为新的整数值
+                    timeSlider.value = newFrame;
+                }
+                else
+                {
+                    // 在当前帧内部更新，不触发OnSliderValueChanged
+                    timeSlider.value = newValue;
+                }
             }
             
             // 鼠标摄像机控制
@@ -309,13 +326,13 @@ namespace WeatherSystem.SingleGrid
 
         public void TogglePlay()
         {
-            isPlaying = true;
+            isPlaying = !isPlaying;
             playSpeed = NORMAL_SPEED;
         }
 
         public void ToggleFastPlay()
         {
-            isPlaying = true;
+            isPlaying = !isPlaying;
             playSpeed = FAST_SPEED;
         }
 
