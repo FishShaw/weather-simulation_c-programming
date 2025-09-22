@@ -114,22 +114,6 @@ Building on the robust data foundation from Phase 1, this phase addresses the vi
 ### 📝 **Research Survey**
 Want to contribute to climate research? [Take our survey](https://tinyurl.com/weathersurveymgi) about weather visualization preferences.
 
-## 🌐 Real-World Applications
-### 🏢 **For Researchers**
-- **Interactive Climate Scenarios**: Immersively explore different weather patterns using Phase 1's validated data
-- **3D Data Analysis**: Understand spatial relationships through interactive 3D visualization
-- **Stakeholder Communication**: Demonstrate research findings through engaging visual experiences
-
-### 🏫 **For Education**
-- **Immersive Learning**: Students can "walk through" weather systems to understand complex concepts
-- **Visual Meteorology**: Transform abstract data from Phase 1 into tangible 3D learning experiences
-- **Interactive Exploration**: Hands-on understanding of climate science principles
-
-### 🏛️ **For Policy Makers**
-- **Scenario Visualization**: Experience potential climate impacts through immersive 3D environments
-- **Evidence-Based Planning**: Make informed infrastructure decisions using interactive climate models
-- **Public Engagement**: Communicate climate risks through accessible, visual demonstrations
-
 ## 🔧 System Views
 
 **Unity Development Environment:**
@@ -137,10 +121,6 @@ Want to contribute to climate research? [Take our survey](https://tinyurl.com/we
 
 **2D Analytical View:**
 ![2D Still View](Docs/Images/2D_view_still.png)
-
-## 🎓 About the Developer
-
-This Phase 2 project represents the visualization and interaction component of my Master's studies in Geo-Information Science at Wageningen University. Combined with Phase 1's data processing foundation, it demonstrates a complete end-to-end solution for innovative geospatial technology applications in climate research and public understanding.
 
 ---
 
