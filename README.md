@@ -30,11 +30,6 @@ Imagine being able to **walk through tomorrow's weather** - feeling the wind, se
 - **Communication**: Uses the custom IPC protocol developed in Phase 1 for real-time data streaming  
 - **Quality Assurance**: Builds on Phase 1's validation framework to ensure visualization accuracy
 
-### 🔬 The Science Behind It
-This is part of my Master's thesis in Geo-Information Science at Wageningen University. The project bridges the gap between complex meteorological data and intuitive understanding, helping researchers and the public better grasp climate change impacts.
-
-![Weather VFX Flow Diagram](Docs/Images/weather-vfx-flow-diagram.png)
-
 ## 🚀 What is it doing?
 
 ### 🌍 **Seamless Data Integration**
@@ -89,6 +84,7 @@ Building on the robust data foundation from Phase 1, this phase addresses the vi
 - **Decision Support Tools**: Interactive interfaces for climate research applications
 
 ![Technical Methods Overview](Docs/Images/methods.png)
+![Weather VFX Flow Diagram](Docs/Images/weather-vfx-flow-diagram.png)
 
 ## 🏗️ Complete System Architecture (Phase 1 + Phase 2)
 
